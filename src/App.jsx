@@ -6,6 +6,16 @@ const SAVED_GAMES_KEY = "srtort_saved_games";
 const API_KEY_KEY = "srtort_api_key";
 const BOARD_SIZE = 36;
 
+// Hebrew display → English for Claude
+const THEME_MAP = {
+  "פנטזיה ימי-ביניימית": "medieval fantasy with knights, castles and dragons",
+  "שודדי חלל":           "space pirates and alien worlds",
+  "מסע תת-ימי":          "underwater ocean adventure with sea creatures",
+  "אי הרי-געש":          "volcanic island survival adventure",
+  "מכשפים וקסמים":       "wizards, magic spells and enchanted forests",
+  "מערות דרקון":         "dragon caves and ancient treasures",
+};
+
 const GLOBAL_STYLE = `
   @keyframes spin   { to { transform: rotate(360deg); } }
   @keyframes float  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
@@ -90,7 +100,6 @@ function playSound(type) {
 }
 
 // ─── Board helpers ────────────────────────────────────────────────────────────
-// Converts 1-based board position to 6x6 display grid (row 0 = top)
 function posToGrid(pos) {
   const idx = pos - 1;
   const row = Math.floor(idx / 6);
@@ -146,12 +155,12 @@ function SavedGamesPanel({ onLoad, onClose }) {
     <div style={overlay}>
       <div style={{ ...card, width: 390, maxHeight: "80vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <span style={{ color: "#f0c040", fontWeight: 900, fontSize: 20 }}>📁 Saved Games</span>
+          <span style={{ color: "#f0c040", fontWeight: 900, fontSize: 20 }}>📁 משחקים שמורים</span>
           <button onClick={onClose} style={closeBtn}>✕</button>
         </div>
         {saved.length === 0 && (
           <div style={{ color: "#444", fontStyle: "italic", textAlign: "center", padding: 24 }}>
-            No saved games yet.
+            אין משחקים שמורים עדיין.
           </div>
         )}
         {saved.map((g) => (
@@ -159,14 +168,14 @@ function SavedGamesPanel({ onLoad, onClose }) {
             <div style={{ fontSize: 30 }}>{g.game?.icon || "🎲"}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: "#f0c040", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {g.game?.title || "Unknown Game"}
+                {g.game?.title || "משחק לא ידוע"}
               </div>
               <div style={{ color: "#555", fontSize: 11, marginTop: 1 }}>{g.game?.subtitle}</div>
               <div style={{ color: "#444", fontSize: 10, marginTop: 3 }}>
-                {new Date(g.savedAt).toLocaleDateString()} • {g.players?.map((p) => p.name).join(", ")}
+                {new Date(g.savedAt).toLocaleDateString("he-IL")} • {g.players?.map((p) => p.name).join(", ")}
               </div>
             </div>
-            <button onClick={() => { playSound("click"); onLoad(g); }} style={btnGold}>Load</button>
+            <button onClick={() => { playSound("click"); onLoad(g); }} style={btnGold}>טען</button>
             <button onClick={() => deleteGame(g.id)} style={btnGhost}>🗑</button>
           </div>
         ))}
@@ -176,10 +185,26 @@ function SavedGamesPanel({ onLoad, onClose }) {
 }
 
 // ─── Event Modal ──────────────────────────────────────────────────────────────
-function EventModal({ event, onClose }) {
-  if (!event) return null;
-  const good = event.spaceType === "card" || event.spaceType === "bonus";
+function EventModal({ event, onClose, loading }) {
+  const good = event?.spaceType === "card" || event?.spaceType === "bonus";
   const accent = good ? "#4dff91" : "#ff4d4d";
+
+  // Loading state — waiting for Claude to generate the event
+  if (loading) {
+    return (
+      <div style={overlay}>
+        <div style={{ ...card, width: 320, textAlign: "center", border: "1px solid #2a2a4a" }}>
+          <div style={{ fontSize: 50, animation: "spin 1s linear infinite", marginBottom: 16 }}>⚙️</div>
+          <div style={{ color: "#f0c040", fontSize: 16, fontWeight: 700, animation: "pulse 1.5s ease-in-out infinite" }}>
+            הAI מספר מה קרה...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) return null;
+
   return (
     <div style={overlay}>
       <div style={{ ...card, width: 390, textAlign: "center", animation: "pop .22s ease-out", border: `2px solid ${accent}` }}>
@@ -201,7 +226,7 @@ function EventModal({ event, onClose }) {
           onClick={() => { playSound("click"); onClose(); }}
           style={{ ...btnPrimary, background: accent, width: "100%", fontSize: 16 }}
         >
-          Continue →
+          המשך →
         </button>
       </div>
     </div>
@@ -235,13 +260,13 @@ function BoardDisplay({ spaces, players }) {
           const playersHere = playerMap[space.id] || [];
           const isWin = space.id === BOARD_SIZE;
           const bg =
-            isWin          ? "#f0c04028" :
+            isWin                  ? "#f0c04028" :
             space.type === "card"  ? "#4dff9120" :
             space.type === "trap"  ? "#ff4d4d1a" :
             space.type === "bonus" ? "#4daaff1a" :
             "#1a1a2e";
           const border =
-            isWin          ? "#f0c040" :
+            isWin                  ? "#f0c040" :
             space.type === "card"  ? "#4dff9166" :
             space.type === "trap"  ? "#ff4d4d66" :
             space.type === "bonus" ? "#4daaff66" :
@@ -293,21 +318,17 @@ function BoardDisplay({ spaces, players }) {
 function PlayerCard({ player, index, isActive }) {
   const color = PLAYER_COLORS[index];
   return (
-    <div
-      style={{
-        background: isActive ? "#151528" : "#0d0d1a",
-        border: `1.5px solid ${isActive ? color : "#1a1a3a"}`,
-        borderRadius: 12,
-        padding: "9px 13px",
-        display: "flex",
-        alignItems: "center",
-        gap: 9,
-        transition: "border-color .2s, background .2s",
-      }}
-    >
-      <div
-        style={{ width: 30, height: 30, borderRadius: "50%", background: color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#000c", flexShrink: 0 }}
-      >
+    <div style={{
+      background: isActive ? "#151528" : "#0d0d1a",
+      border: `1.5px solid ${isActive ? color : "#1a1a3a"}`,
+      borderRadius: 12,
+      padding: "9px 13px",
+      display: "flex",
+      alignItems: "center",
+      gap: 9,
+      transition: "border-color .2s, background .2s",
+    }}>
+      <div style={{ width: 30, height: 30, borderRadius: "50%", background: color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#000c", flexShrink: 0 }}>
         {player.name[0]?.toUpperCase()}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -315,7 +336,7 @@ function PlayerCard({ player, index, isActive }) {
           {player.name}
         </div>
         <div style={{ color: "#3a3a5a", fontSize: 10, marginTop: 1 }}>
-          Space {player.position || "—"}{player.skip ? " · skips next" : ""}
+          משבצת {player.position || "—"}{player.skip ? " · מדלג על תור" : ""}
         </div>
       </div>
       {isActive && <div style={{ color: color, fontSize: 14 }}>▶</div>}
@@ -326,10 +347,10 @@ function PlayerCard({ player, index, isActive }) {
 // ─── Board Legend ─────────────────────────────────────────────────────────────
 function BoardLegend() {
   const items = [
-    { color: "#4dff9166", label: "Lucky" },
-    { color: "#ff4d4d66", label: "Trap" },
-    { color: "#4daaff66", label: "Bonus" },
-    { color: "#f0c04066", label: "Finish" },
+    { color: "#4dff9166", label: "מזל" },
+    { color: "#ff4d4d66", label: "מלכודת" },
+    { color: "#4daaff66", label: "בונוס" },
+    { color: "#f0c04066", label: "סיום" },
   ];
   return (
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
@@ -378,33 +399,41 @@ const page = {
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [screen, setScreen] = useState("home"); // home | setup | loading | board | win
-  const [apiKey, setApiKey]   = useState(() => localStorage.getItem(API_KEY_KEY) || "");
-  const [apiKeyDraft, setApiKeyDraft] = useState("");
+  const [screen, setScreen]             = useState("home");
+  const [apiKey, setApiKey]             = useState(() => localStorage.getItem(API_KEY_KEY) || "");
+  const [apiKeyDraft, setApiKeyDraft]   = useState("");
   const [showKeyPanel, setShowKeyPanel] = useState(false);
   const [showSaved, setShowSaved]       = useState(false);
 
   // Game state
-  const [game, setGame]                 = useState(null);
-  const [players, setPlayers]           = useState([]);
-  const [currentPlayer, setCurrentPlayer] = useState(0);
-  const [diceValue, setDiceValue]       = useState(1);
-  const [rolling, setRolling]           = useState(false);
-  const [canRoll, setCanRoll]           = useState(true);
-  const [log, setLog]                   = useState([]);
-  const [activeEvent, setActiveEvent]   = useState(null);
-  const [winner, setWinner]             = useState(null);
-  const [loadingMsg, setLoadingMsg]     = useState("");
-  const [error, setError]               = useState("");
+  const [game, setGame]                     = useState(null);
+  const [players, setPlayers]               = useState([]);
+  const [currentPlayer, setCurrentPlayer]   = useState(0);
+  const [diceValue, setDiceValue]           = useState(1);
+  const [rolling, setRolling]               = useState(false);
+  const [canRoll, setCanRoll]               = useState(true);
+  const [log, setLog]                       = useState([]);
+  const [activeEvent, setActiveEvent]       = useState(null);
+  const [eventLoading, setEventLoading]     = useState(false); // fix: loading indicator for event
+  const [winner, setWinner]                 = useState(null);
+  const [loadingMsg, setLoadingMsg]         = useState("");
+  const [error, setError]                   = useState("");
 
   // Setup state
   const [playerCount, setPlayerCount]   = useState(2);
-  const [playerNames, setPlayerNames]   = useState(["Player 1", "Player 2", "Player 3", "Player 4"]);
+  const [playerNames, setPlayerNames]   = useState(["שחקן 1", "שחקן 2", "שחקן 3", "שחקן 4"]);
   const [theme, setTheme]               = useState("");
 
-  // Tracks the latest players ref to avoid stale closure in async callbacks
-  const playersRef = useRef(players);
-  useEffect(() => { playersRef.current = players; }, [players]);
+  // Ref to avoid stale closure in async callbacks
+  const playersRef    = useRef(players);
+  const currentPRef   = useRef(currentPlayer);
+  const ivRef         = useRef(null); // fix: track interval for cleanup
+
+  useEffect(() => { playersRef.current  = players;       }, [players]);
+  useEffect(() => { currentPRef.current = currentPlayer; }, [currentPlayer]);
+
+  // fix: clean up interval if component unmounts mid-roll
+  useEffect(() => () => { if (ivRef.current) clearInterval(ivRef.current); }, []);
 
   function addLog(msg) {
     setLog((l) => [...l.slice(-29), msg]);
@@ -427,43 +456,45 @@ export default function App() {
     setLog(save.log ?? []);
     setWinner(null);
     setActiveEvent(null);
+    setEventLoading(false);
     setCanRoll(true);
     setShowSaved(false);
     setScreen("board");
   }
 
-  // ── Generate board via Claude ─────────────────────────────────────────────────
+  // ── Generate board ────────────────────────────────────────────────────────────
   async function generateBoard() {
     if (!apiKey) { setError("הזן מפתח API לפני התחלת המשחק."); return; }
     setError("");
     setScreen("loading");
     setLoadingMsg("🧙 AI מייצר את ההרפתקה שלך...");
 
-    const boardTheme = theme.trim() || "whimsical fantasy adventure";
+    // fix: translate Hebrew theme names to English for Claude
+    const englishTheme = THEME_MAP[theme.trim()] || theme.trim() || "whimsical fantasy adventure";
 
     const data = await callClaude(
       [{
         role: "user",
-        content: `Design a board game with the theme: "${boardTheme}".
-Return ONLY a JSON object with this exact structure (no extra text):
+        content: `Design a board game with the theme: "${englishTheme}".
+Return ONLY a JSON object (no extra text):
 {
-  "title": "Creative game title",
-  "subtitle": "Short tagline",
+  "title": "Creative Hebrew game title",
+  "subtitle": "Short Hebrew tagline",
   "icon": "single emoji",
-  "theme": "${boardTheme}",
+  "theme": "${englishTheme}",
   "spaces": [
-    {"id":1,"type":"normal","name":"Space name","icon":"emoji"},
+    {"id":1,"type":"normal","name":"Hebrew space name","icon":"emoji"},
     ...
-    {"id":36,"type":"win","name":"FINISH","icon":"🏆"}
+    {"id":36,"type":"win","name":"סיום","icon":"🏆"}
   ]
 }
 Rules for 36 spaces total:
-- type "normal": 20 spaces (nothing special happens)
-- type "card": 7 lucky spaces (good things happen)
-- type "trap": 7 bad spaces (obstacles and setbacks)
-- type "bonus": 2 spaces (extra movement)
+- type "normal": 20 spaces
+- type "card": 7 lucky spaces
+- type "trap": 7 bad spaces
+- type "bonus": 2 extra movement spaces
 - type "win": exactly space 36
-All names and icons must fit the theme. Return ONLY valid JSON.`,
+All names must be in Hebrew and fit the theme. Return ONLY valid JSON.`,
       }],
       "You are a creative board game designer. Output only valid JSON, no prose, no markdown.",
       apiKey
@@ -475,15 +506,15 @@ All names and icons must fit the theme. Return ONLY valid JSON.`,
       return;
     }
 
-    // Ensure exactly 36 spaces with IDs
+    // Ensure exactly 36 spaces
     while (data.spaces.length < BOARD_SIZE) {
       const id = data.spaces.length + 1;
-      data.spaces.push({ id, type: id === BOARD_SIZE ? "win" : "normal", name: `Space ${id}`, icon: id === BOARD_SIZE ? "🏆" : "·" });
+      data.spaces.push({ id, type: id === BOARD_SIZE ? "win" : "normal", name: id === BOARD_SIZE ? "סיום" : `משבצת ${id}`, icon: id === BOARD_SIZE ? "🏆" : "·" });
     }
     data.spaces = data.spaces.slice(0, BOARD_SIZE).map((s, i) => ({ ...s, id: i + 1 }));
 
     const newPlayers = playerNames.slice(0, playerCount).map((name, i) => ({
-      name: name.trim() || `Player ${i + 1}`,
+      name: name.trim() || `שחקן ${i + 1}`,
       color: PLAYER_COLORS[i],
       position: 0,
       skip: false,
@@ -495,24 +526,27 @@ All names and icons must fit the theme. Return ONLY valid JSON.`,
     setLog([`🎲 "${data.title}" מתחיל! ${newPlayers[0].name} עולה ראשון.`]);
     setWinner(null);
     setActiveEvent(null);
+    setEventLoading(false);
     setCanRoll(true);
     setScreen("board");
   }
 
   // ── Dice roll ─────────────────────────────────────────────────────────────────
   function rollDice() {
-    if (!canRoll || rolling || activeEvent) return;
+    if (!canRoll || rolling || activeEvent || eventLoading) return;
     setCanRoll(false);
     setRolling(true);
     playSound("dice");
 
     let frame = 0;
     const totalFrames = 14;
-    const iv = setInterval(() => {
+    // fix: store interval ref for cleanup
+    ivRef.current = setInterval(() => {
       setDiceValue(Math.ceil(Math.random() * 6));
       frame++;
       if (frame >= totalFrames) {
-        clearInterval(iv);
+        clearInterval(ivRef.current);
+        ivRef.current = null;
         const roll = Math.ceil(Math.random() * 6);
         setDiceValue(roll);
         setRolling(false);
@@ -523,60 +557,63 @@ All names and icons must fit the theme. Return ONLY valid JSON.`,
 
   async function applyRoll(roll) {
     const currentPlayers = playersRef.current;
-    const p = currentPlayers[currentPlayer];
+    const cp = currentPRef.current; // fix: use ref instead of stale closure
+    const p = currentPlayers[cp];
     const newPos = Math.min(p.position + roll, BOARD_SIZE);
     playSound("move");
 
     const updatedPlayers = currentPlayers.map((pl, i) =>
-      i === currentPlayer ? { ...pl, position: newPos } : pl
+      i === cp ? { ...pl, position: newPos } : pl
     );
     setPlayers(updatedPlayers);
     addLog(`🎲 ${p.name} הטיל ${roll} → משבצת ${newPos}`);
 
-    // Win condition
     if (newPos >= BOARD_SIZE) {
       playSound("win");
-      setWinner(currentPlayer);
+      setWinner(cp);
       addLog(`🏆 ${p.name} ניצח!`);
       setScreen("win");
       return;
     }
 
-    // Check special space
     const space = game.spaces[newPos - 1];
     if (space && ["card", "trap", "bonus"].includes(space.type)) {
       playSound(space.type === "trap" ? "trap" : "card");
+      // fix: show loading spinner immediately while waiting for Claude
+      setEventLoading(true);
 
       const eventData = await callClaude(
         [{
           role: "user",
-          content: `Player "${p.name}" landed on "${space.name}" (type: ${space.type}) in a "${game.theme}" board game.
-Create a short dramatic event. Return ONLY JSON:
+          content: `שחקן בשם "${p.name}" נחת על המשבצת "${space.name}" (סוג: ${space.type}) במשחק "${game.theme}".
+צור אירוע קצר ודרמטי בעברית. החזר JSON בלבד:
 {
-  "title": "Short dramatic title",
-  "description": "Two engaging sentences narrating what happens.",
-  "icon": "single relevant emoji",
-  "effectText": "Move forward/back N spaces" or "Skip next turn",
+  "title": "כותרת קצרה ודרמטית בעברית",
+  "description": "שתי משפטים בעברית המתארים מה קרה.",
+  "icon": "אמוג'י רלוונטי יחיד",
+  "effectText": "התקדם/חזור X משבצות",
   "effect": {"type": "move", "value": 3}
 }
-For trap: value -2 to -4.
-For card: value +2 to +4.
-For bonus: value +3 to +5.
-Return ONLY valid JSON.`,
+עבור מלכודת (trap): value בין -2 ל-4-.
+עבור מזל (card): value בין 2 ל-4.
+עבור בונוס (bonus): value בין 3 ל-5.
+החזר JSON תקני בלבד.`,
         }],
-        "You are a dramatic board game narrator. Output only valid JSON.",
+        "אתה מספר סיפורים דרמטי למשחקי לוח. פלט JSON תקני בלבד.",
         apiKey
       );
 
+      // fix: Hebrew fallbacks
       const fallbacks = {
-        card:  { title: "Lucky Break!", description: "Fortune smiles upon you. The path ahead clears.", icon: "⭐", effectText: "Move forward 2", effect: { type: "move", value: 2 } },
-        trap:  { title: "Ambushed!", description: "Something goes terribly wrong. You stumble back.", icon: "💀", effectText: "Move back 2", effect: { type: "move", value: -2 } },
-        bonus: { title: "Tailwind!", description: "An unexpected boost carries you forward.", icon: "🌟", effectText: "Move forward 4", effect: { type: "move", value: 4 } },
+        card:  { title: "מזל גדול!", description: "המזל חייך לך. הדרך קדימה פנויה.", icon: "⭐", effectText: "התקדם 2 משבצות", effect: { type: "move", value: 2 } },
+        trap:  { title: "מארב!", description: "משהו נורא קרה. אתה נסוג לאחור.", icon: "💀", effectText: "חזור 2 משבצות", effect: { type: "move", value: -2 } },
+        bonus: { title: "רוח גבית!", description: "דחיפה בלתי צפויה מקדמת אותך.", icon: "🌟", effectText: "התקדם 4 משבצות", effect: { type: "move", value: 4 } },
       };
 
+      setEventLoading(false);
       setActiveEvent({ ...(eventData || fallbacks[space.type]), spaceType: space.type });
     } else {
-      advanceTurn(updatedPlayers);
+      advanceTurn(updatedPlayers, cp);
     }
   }
 
@@ -585,38 +622,44 @@ Return ONLY valid JSON.`,
     setActiveEvent(null);
     if (!event) return;
 
+    const cp = currentPRef.current;
     let current = [...playersRef.current];
+
     if (event.effect?.type === "move") {
-      const p = current[currentPlayer];
+      const p = current[cp];
       const newPos = Math.max(1, Math.min(BOARD_SIZE, p.position + event.effect.value));
-      current[currentPlayer] = { ...p, position: newPos };
+      current[cp] = { ...p, position: newPos };
       setPlayers(current);
       addLog(`  ↳ ${p.name}: ${event.effectText || ""} → משבצת ${newPos}`);
 
       if (newPos >= BOARD_SIZE) {
         playSound("win");
-        setWinner(currentPlayer);
+        setWinner(cp);
         addLog(`🏆 ${p.name} ניצח!`);
         setScreen("win");
         return;
       }
     } else if (event.effect?.type === "skip") {
-      current[currentPlayer] = { ...current[currentPlayer], skip: true };
+      current[cp] = { ...current[cp], skip: true };
       setPlayers(current);
     }
 
-    advanceTurn(current);
+    advanceTurn(current, cp);
   }
 
-  function advanceTurn(currentPlayers) {
-    let next = (currentPlayer + 1) % currentPlayers.length;
-    if (currentPlayers[next]?.skip) {
+  // fix: accept currentPlayer as parameter instead of relying on closure
+  function advanceTurn(currentPlayers, cp) {
+    let next = (cp + 1) % currentPlayers.length;
+    // Handle consecutive skips
+    let safetyCounter = 0;
+    while (currentPlayers[next]?.skip && safetyCounter < currentPlayers.length) {
       const skippedName = currentPlayers[next].name;
-      const cleared = currentPlayers.map((p, i) => i === next ? { ...p, skip: false } : p);
-      setPlayers(cleared);
+      currentPlayers = currentPlayers.map((p, i) => i === next ? { ...p, skip: false } : p);
       addLog(`⏭ ${skippedName} מדלג על התור.`);
-      next = (next + 1) % cleared.length;
+      next = (next + 1) % currentPlayers.length;
+      safetyCounter++;
     }
+    setPlayers(currentPlayers);
     setCurrentPlayer(next);
     addLog(`▶ תור ${currentPlayers[next]?.name || ""}`);
     setCanRoll(true);
@@ -626,7 +669,6 @@ Return ONLY valid JSON.`,
   // Screens
   // ─────────────────────────────────────────────────────────────────────────────
 
-  // ── Home ────────────────────────────────────────────────────────────────────
   if (screen === "home") {
     return (
       <div style={page}>
@@ -638,9 +680,7 @@ Return ONLY valid JSON.`,
           <div style={{ color: "#f0c040", fontWeight: 900, fontSize: 44, letterSpacing: 3, marginBottom: 4 }}>
             SARTORT
           </div>
-          <div style={{ color: "#444", fontSize: 14, marginBottom: 40 }}>
-            משחק לוח עם AI
-          </div>
+          <div style={{ color: "#444", fontSize: 14, marginBottom: 40 }}>משחק לוח עם AI</div>
 
           {error && (
             <div style={{ background: "#ff4d4d15", border: "1px solid #ff4d4d44", borderRadius: 10, padding: 12, color: "#ff4d4d", fontSize: 13, marginBottom: 20 }}>
@@ -696,25 +736,20 @@ Return ONLY valid JSON.`,
             </div>
           )}
 
-          {apiKey && (
-            <div style={{ marginTop: 14, color: "#2a3a2a", fontSize: 11 }}>
-              ✓ מפתח API מוגדר
-            </div>
-          )}
+          {apiKey && <div style={{ marginTop: 14, color: "#2a3a2a", fontSize: 11 }}>✓ מפתח API מוגדר</div>}
         </div>
       </div>
     );
   }
 
-  // ── Setup ───────────────────────────────────────────────────────────────────
   if (screen === "setup") {
     const THEMES = [
-      "🏰 פנטזיה ימי-ביניימית",
-      "🚀 שודדי חלל",
-      "🌊 מסע תת-ימי",
-      "🌋 אי הרי-געש",
-      "🧙 מכשפים וקסמים",
-      "🐉 מערות דרקון",
+      { label: "🏰 פנטזיה ימי-ביניימית", value: "פנטזיה ימי-ביניימית" },
+      { label: "🚀 שודדי חלל",           value: "שודדי חלל" },
+      { label: "🌊 מסע תת-ימי",          value: "מסע תת-ימי" },
+      { label: "🌋 אי הרי-געש",          value: "אי הרי-געש" },
+      { label: "🧙 מכשפים וקסמים",       value: "מכשפים וקסמים" },
+      { label: "🐉 מערות דרקון",         value: "מערות דרקון" },
     ];
     return (
       <div style={{ ...page, justifyContent: "flex-start", paddingTop: 40 }}>
@@ -729,7 +764,6 @@ Return ONLY valid JSON.`,
             <div style={{ background: "#ff4d4d15", border: "1px solid #ff4d4d44", borderRadius: 10, padding: 12, color: "#ff4d4d", fontSize: 13, marginBottom: 16 }}>{error}</div>
           )}
 
-          {/* Player count */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ color: "#777", fontSize: 13, marginBottom: 10 }}>מספר שחקנים</div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -745,7 +779,6 @@ Return ONLY valid JSON.`,
             </div>
           </div>
 
-          {/* Player names */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ color: "#777", fontSize: 13, marginBottom: 10 }}>שמות שחקנים</div>
             {Array.from({ length: playerCount }).map((_, i) => (
@@ -765,7 +798,6 @@ Return ONLY valid JSON.`,
             ))}
           </div>
 
-          {/* Theme */}
           <div style={{ marginBottom: 30 }}>
             <div style={{ color: "#777", fontSize: 13, marginBottom: 10 }}>נושא המשחק (אופציונלי)</div>
             <input
@@ -775,18 +807,15 @@ Return ONLY valid JSON.`,
               style={{ ...input, marginBottom: 10 }}
             />
             <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-              {THEMES.map((t) => {
-                const label = t.split(" ").slice(1).join(" ");
-                return (
-                  <button
-                    key={t}
-                    onClick={() => { playSound("click"); setTheme(label); }}
-                    style={{ background: theme === label ? "#2a2a4a" : "#111120", border: `1px solid ${theme === label ? "#3a3a6a" : "#1e1e3a"}`, borderRadius: 8, padding: "6px 11px", color: theme === label ? "#aaa" : "#444", fontSize: 12, cursor: "pointer", transition: "all .15s" }}
-                  >
-                    {t}
-                  </button>
-                );
-              })}
+              {THEMES.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => { playSound("click"); setTheme(t.value); }}
+                  style={{ background: theme === t.value ? "#2a2a4a" : "#111120", border: `1px solid ${theme === t.value ? "#3a3a6a" : "#1e1e3a"}`, borderRadius: 8, padding: "6px 11px", color: theme === t.value ? "#aaa" : "#444", fontSize: 12, cursor: "pointer", transition: "all .15s" }}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -801,7 +830,6 @@ Return ONLY valid JSON.`,
     );
   }
 
-  // ── Loading ──────────────────────────────────────────────────────────────────
   if (screen === "loading") {
     return (
       <div style={page}>
@@ -825,7 +853,6 @@ Return ONLY valid JSON.`,
     );
   }
 
-  // ── Win ──────────────────────────────────────────────────────────────────────
   if (screen === "win" && winner !== null) {
     const w = players[winner];
     return (
@@ -833,21 +860,13 @@ Return ONLY valid JSON.`,
         <style>{GLOBAL_STYLE}</style>
         <div style={{ textAlign: "center", maxWidth: 420 }}>
           <div style={{ fontSize: 90, animation: "float 1.8s ease-in-out infinite", marginBottom: 14 }}>🏆</div>
-          <div style={{ color: "#f0c040", fontWeight: 900, fontSize: 38, marginBottom: 6 }}>
-            {w?.name} ניצח!
-          </div>
+          <div style={{ color: "#f0c040", fontWeight: 900, fontSize: 38, marginBottom: 6 }}>{w?.name} ניצח!</div>
           <div style={{ color: "#444", fontSize: 16, marginBottom: 36 }}>{game?.title}</div>
           <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-            <button
-              onClick={() => { playSound("click"); setWinner(null); setScreen("setup"); }}
-              style={{ ...btnPrimary, padding: "14px 30px" }}
-            >
+            <button onClick={() => { playSound("click"); setWinner(null); setScreen("setup"); }} style={{ ...btnPrimary, padding: "14px 30px" }}>
               🎮 שחק שוב
             </button>
-            <button
-              onClick={() => { playSound("click"); setScreen("home"); }}
-              style={{ background: "none", color: "#f0c040", border: "2px solid #f0c04033", borderRadius: 14, padding: "14px 30px", fontSize: 16, fontWeight: 700, cursor: "pointer" }}
-            >
+            <button onClick={() => { playSound("click"); setScreen("home"); }} style={{ background: "none", color: "#f0c040", border: "2px solid #f0c04033", borderRadius: 14, padding: "14px 30px", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
               🏠 בית
             </button>
           </div>
@@ -856,15 +875,18 @@ Return ONLY valid JSON.`,
     );
   }
 
-  // ── Board ────────────────────────────────────────────────────────────────────
   if (screen === "board" && game) {
     const cp = players[currentPlayer];
+    const blocked = !canRoll || rolling || !!activeEvent || eventLoading;
     return (
       <div style={{ minHeight: "100vh", background: "#0a0a14", fontFamily: "system-ui,-apple-system,sans-serif", display: "flex", flexDirection: "column", alignItems: "center", padding: "14px 10px 30px" }}>
         <style>{GLOBAL_STYLE}</style>
-        {activeEvent && <EventModal event={activeEvent} onClose={handleEventClose} />}
 
-        {/* Header */}
+        {/* fix: show loading overlay OR event modal */}
+        {(eventLoading || activeEvent) && (
+          <EventModal event={activeEvent} onClose={handleEventClose} loading={eventLoading} />
+        )}
+
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, width: "100%", maxWidth: 468 }}>
           <div style={{ fontSize: 26 }}>{game.icon}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -873,46 +895,38 @@ Return ONLY valid JSON.`,
             </div>
             <div style={{ color: "#333", fontSize: 11 }}>{game.subtitle}</div>
           </div>
-          <button onClick={() => { saveGame(); }} style={btnGhost} title="שמור">💾</button>
+          <button onClick={saveGame} style={btnGhost} title="שמור">💾</button>
           <button onClick={() => { playSound("click"); setScreen("home"); }} style={{ ...btnGhost, fontSize: 18, borderColor: "transparent" }}>✕</button>
         </div>
 
-        {/* Board */}
         <BoardDisplay spaces={game.spaces} players={players} />
+        <div style={{ marginTop: 8 }}><BoardLegend /></div>
 
-        {/* Legend */}
-        <div style={{ marginTop: 8 }}>
-          <BoardLegend />
-        </div>
-
-        {/* Players */}
         <div style={{ width: "100%", maxWidth: 468, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 14 }}>
           {players.map((p, i) => (
             <PlayerCard key={i} player={p} index={i} isActive={i === currentPlayer} />
           ))}
         </div>
 
-        {/* Dice + Roll */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginTop: 18 }}>
           <Die value={diceValue} rolling={rolling} />
           <button
             onClick={rollDice}
-            disabled={!canRoll || rolling || !!activeEvent}
+            disabled={blocked}
             style={{
               ...btnPrimary,
               padding: "14px 38px",
-              background: (canRoll && !rolling && !activeEvent) ? "#f0c040" : "#1a1a2e",
-              color:      (canRoll && !rolling && !activeEvent) ? "#0a0a14" : "#333",
-              cursor:     (canRoll && !rolling && !activeEvent) ? "pointer" : "not-allowed",
+              background: !blocked ? "#f0c040" : "#1a1a2e",
+              color:      !blocked ? "#0a0a14" : "#333",
+              cursor:     !blocked ? "pointer" : "not-allowed",
               transition: "background .2s, color .2s",
-              animation:  (canRoll && !rolling && !activeEvent) ? "glow 2s ease-in-out infinite" : "none",
+              animation:  !blocked ? "glow 2s ease-in-out infinite" : "none",
             }}
           >
-            {rolling ? "מטיל..." : `🎲 הטל קוביה — ${cp?.name}`}
+            {rolling ? "מטיל..." : eventLoading ? "AI חושב..." : `🎲 הטל קוביה — ${cp?.name}`}
           </button>
         </div>
 
-        {/* Game Log */}
         <div style={{ width: "100%", maxWidth: 468, marginTop: 16, background: "#0d0d1a", border: "1px solid #1a1a2e", borderRadius: 14, padding: "10px 14px", maxHeight: 130, overflowY: "auto" }}>
           <div style={{ color: "#2a2a3a", fontSize: 10, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>יומן משחק</div>
           {[...log].reverse().map((entry, i) => (
