@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PLAYER_COLORS = ["#ff4d4d", "#4daaff", "#4dff91", "#ffd700"];
 const SAVED_GAMES_KEY = "srtort_saved_games";
-const API_KEY_KEY = "srtort_api_key";
 const BOARD_SIZE = 36;
 
 // Hebrew display → English for Claude
@@ -26,25 +25,15 @@ const GLOBAL_STYLE = `
 `;
 
 // ─── API ──────────────────────────────────────────────────────────────────────
-async function callClaude(messages, system, apiKey) {
+async function callClaude(messages, system) {
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("/api/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
-        system,
-        messages,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages, system, max_tokens: 2000 }),
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
+    if (data.error) throw new Error(data.error.message || data.error);
     const text = data.content?.map((b) => b.text || "").join("") || "";
     return JSON.parse(text.replace(/```json\n?|```/g, "").trim());
   } catch {
@@ -400,9 +389,6 @@ const page = {
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen]             = useState("home");
-  const [apiKey, setApiKey]             = useState(() => localStorage.getItem(API_KEY_KEY) || "");
-  const [apiKeyDraft, setApiKeyDraft]   = useState("");
-  const [showKeyPanel, setShowKeyPanel] = useState(false);
   const [showSaved, setShowSaved]       = useState(false);
 
   // Game state
@@ -464,7 +450,6 @@ export default function App() {
 
   // ── Generate board ────────────────────────────────────────────────────────────
   async function generateBoard() {
-    if (!apiKey) { setError("הזן מפתח API לפני התחלת המשחק."); return; }
     setError("");
     setScreen("loading");
     setLoadingMsg("🧙 AI מייצר את ההרפתקה שלך...");
@@ -496,8 +481,7 @@ Rules for 36 spaces total:
 - type "win": exactly space 36
 All names must be in Hebrew and fit the theme. Return ONLY valid JSON.`,
       }],
-      "You are a creative board game designer. Output only valid JSON, no prose, no markdown.",
-      apiKey
+      "You are a creative board game designer. Output only valid JSON, no prose, no markdown."
     );
 
     if (!data?.spaces || data.spaces.length < 10) {
@@ -599,8 +583,7 @@ All names must be in Hebrew and fit the theme. Return ONLY valid JSON.`,
 עבור בונוס (bonus): value בין 3 ל-5.
 החזר JSON תקני בלבד.`,
         }],
-        "אתה מספר סיפורים דרמטי למשחקי לוח. פלט JSON תקני בלבד.",
-        apiKey
+        "אתה מספר סיפורים דרמטי למשחקי לוח. פלט JSON תקני בלבד."
       );
 
       // fix: Hebrew fallbacks
@@ -689,54 +672,17 @@ All names must be in Hebrew and fit the theme. Return ONLY valid JSON.`,
           )}
 
           <button
-            onClick={() => { playSound("click"); if (!apiKey) { setError("הזן מפתח API בהגדרות קודם."); return; } setError(""); setScreen("setup"); }}
+            onClick={() => { playSound("click"); setError(""); setScreen("setup"); }}
             style={{ ...btnPrimary, display: "block", width: "100%", marginBottom: 12 }}
           >
             🎮 משחק חדש
           </button>
           <button
             onClick={() => { playSound("click"); setShowSaved(true); }}
-            style={{ display: "block", width: "100%", background: "none", color: "#f0c040", border: "2px solid #f0c04033", borderRadius: 14, padding: "13px 0", fontSize: 16, fontWeight: 700, cursor: "pointer", marginBottom: 12 }}
+            style={{ display: "block", width: "100%", background: "none", color: "#f0c040", border: "2px solid #f0c04033", borderRadius: 14, padding: "13px 0", fontSize: 16, fontWeight: 700, cursor: "pointer" }}
           >
             📁 טען משחק שמור
           </button>
-          <button
-            onClick={() => { playSound("click"); setShowKeyPanel(!showKeyPanel); setApiKeyDraft(apiKey); }}
-            style={{ display: "block", width: "100%", background: "none", color: "#3a3a5a", border: "1px solid #1a1a3a", borderRadius: 14, padding: "12px 0", fontSize: 14, cursor: "pointer" }}
-          >
-            ⚙️ הגדרות (מפתח API)
-          </button>
-
-          {showKeyPanel && (
-            <div style={{ marginTop: 16, ...card }}>
-              <div style={{ color: "#888", fontSize: 13, marginBottom: 10 }}>מפתח Anthropic API</div>
-              <input
-                type="password"
-                value={apiKeyDraft}
-                onChange={(e) => setApiKeyDraft(e.target.value)}
-                placeholder="sk-ant-..."
-                style={input}
-              />
-              <div style={{ color: "#333", fontSize: 11, marginTop: 6, marginBottom: 10 }}>
-                המפתח נשמר רק בדפדפן שלך ולא נשלח לשרתים שלנו.
-              </div>
-              <button
-                onClick={() => {
-                  const k = apiKeyDraft.trim();
-                  setApiKey(k);
-                  localStorage.setItem(API_KEY_KEY, k);
-                  setShowKeyPanel(false);
-                  setError("");
-                  playSound("click");
-                }}
-                style={{ ...btnPrimary, display: "block", width: "100%", fontSize: 14, padding: "10px 0" }}
-              >
-                שמור מפתח
-              </button>
-            </div>
-          )}
-
-          {apiKey && <div style={{ marginTop: 14, color: "#2a3a2a", fontSize: 11 }}>✓ מפתח API מוגדר</div>}
         </div>
       </div>
     );
