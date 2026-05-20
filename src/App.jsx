@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { THEMES } from "./gameData.js";
+import GameCreatorApp from "./GameCreatorApp.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PLAYER_COLORS = ["#ff4d4d", "#4daaff", "#4dff91", "#ffd700"];
@@ -368,6 +369,8 @@ export default function App() {
   // Screens
   // ─────────────────────────────────────────────────────────────────────────────
 
+  if (screen === "creator") return <GameCreatorApp onBack={() => setScreen("home")} />;
+
   if (screen === "home") return (
     <div style={page}>
       <style>{GLOBAL_STYLE}</style>
@@ -381,8 +384,12 @@ export default function App() {
           🎮 משחק חדש
         </button>
         <button onClick={() => { playSound("click"); setShowSaved(true); }}
-          style={{ display:"block", width:"100%", background:"none", color:"#f0c040", border:"2px solid #f0c04033", borderRadius:14, padding:"13px 0", fontSize:16, fontWeight:700, cursor:"pointer" }}>
+          style={{ display:"block", width:"100%", background:"none", color:"#f0c040", border:"2px solid #f0c04033", borderRadius:14, padding:"13px 0", fontSize:16, fontWeight:700, cursor:"pointer", marginBottom:12 }}>
           📁 טען משחק שמור
+        </button>
+        <button onClick={() => { playSound("click"); setScreen("creator"); }}
+          style={{ display:"block", width:"100%", background:"none", color:"#818cf8", border:"2px solid #4f46e533", borderRadius:14, padding:"13px 0", fontSize:16, fontWeight:700, cursor:"pointer" }}>
+          🎨 מחולל משחקים
         </button>
       </div>
     </div>
