@@ -42,19 +42,19 @@ const GAME_TEMPLATES = [
 
 // ── Shared style tokens ────────────────────────────────────────────────────────
 const C = {
-  bg0: "#080810", bg1: "#0a0a14", bg2: "#0d0d1a", bg3: "#1a1a2e",
-  border: "#1e1e3a", border2: "#2a2a4a",
-  text1: "#e2e8f0", text2: "#888", text3: "#555",
-  indigo: "#4f46e5", indigoHover: "#6366f1", indigoText: "#818cf8",
+  bg0: "#fff0f5", bg1: "#fff5f8", bg2: "#ffffff", bg3: "#fce8f2",
+  border: "#f0d8e8", border2: "#e8c8d8",
+  text1: "#2d1520", text2: "#a07888", text3: "#c0909e",
+  indigo: "#f08080", indigoHover: "#e86868", indigoText: "#c06060",
 };
 
 const st = {
   page:     { minHeight: "100vh", background: C.bg1, color: C.text1, fontFamily: "system-ui,-apple-system,sans-serif", direction: "rtl" },
-  header:   { position: "sticky", top: 0, zIndex: 50, background: "rgba(10,10,20,0.92)", borderBottom: `1px solid ${C.border}`, padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(8px)" },
+  header:   { position: "sticky", top: 0, zIndex: 50, background: "rgba(255,245,248,0.95)", borderBottom: `1px solid ${C.border}`, padding: "13px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(8px)" },
   main:     { maxWidth: 1100, margin: "0 auto", padding: "28px 16px" },
   card:     { background: C.bg2, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24 },
   input:    { width: "100%", background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 13px", color: C.text1, fontSize: 14, outline: "none", boxSizing: "border-box" },
-  btnIndigo:{ background: C.indigo, color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 },
+  btnIndigo:{ background: "#f08080", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 },
   btnGhost: { background: C.bg3, color: C.text2, border: `1px solid ${C.border2}`, borderRadius: 10, padding: "10px 16px", fontSize: 13, cursor: "pointer" },
   label:    { display: "block", fontSize: 12, fontWeight: 600, color: C.text3, marginBottom: 6 },
   divider:  { borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 20 },
@@ -252,10 +252,10 @@ export default function GameCreatorApp({ onBack }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {logoFile
             ? <img src={logoFile} alt="Logo" style={{ width: 38, height: 38, borderRadius: 9, objectFit: "cover", border: `1px solid ${C.border}` }} />
-            : <div style={{ width: 38, height: 38, background: C.indigo, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18, color: "#fff" }}>G</div>
+            : <div style={{ width: 38, height: 38, background: "#FFB3C6", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18, color: "#fff" }}>🎲</div>
           }
           <div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: C.indigoText }}>GameForge Engine</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: "#f08080" }}>GameForge Engine</div>
             <div style={{ fontSize: 11, color: C.text3 }}>מחולל המשחקים של Sartort</div>
           </div>
         </div>

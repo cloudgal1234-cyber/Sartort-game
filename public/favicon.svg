@@ -1,9 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#0a0a14"/>
-  <rect x="8" y="8" width="84" height="84" rx="16" fill="#1a1a2e" stroke="#f0c040" stroke-width="4"/>
-  <circle cx="30" cy="30" r="9" fill="#f0c040"/>
-  <circle cx="70" cy="30" r="9" fill="#f0c040"/>
-  <circle cx="50" cy="50" r="9" fill="#f0c040"/>
-  <circle cx="30" cy="70" r="9" fill="#f0c040"/>
-  <circle cx="70" cy="70" r="9" fill="#f0c040"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#fff5f8"/>
+  <!-- Dice body -->
+  <rect x="6" y="10" width="40" height="40" rx="9" fill="#FFB3C6" stroke="#F090A0" stroke-width="1.5"/>
+  <!-- Dice top face -->
+  <path d="M6,10 L19,2 L59,2 L46,10Z" fill="#FFD0DC"/>
+  <!-- Dice right face -->
+  <path d="M46,10 L59,2 L59,42 L46,50Z" fill="#F090A0"/>
+  <!-- Dots (5) -->
+  <circle cx="18" cy="22" r="4" fill="white" opacity="0.85"/>
+  <circle cx="34" cy="22" r="4" fill="white" opacity="0.85"/>
+  <circle cx="26" cy="30" r="4" fill="white" opacity="0.85"/>
+  <circle cx="18" cy="38" r="4" fill="white" opacity="0.85"/>
+  <circle cx="34" cy="38" r="4" fill="white" opacity="0.85"/>
+  <!-- Pawn base -->
+  <ellipse cx="56" cy="60" rx="7" ry="3.5" fill="#90D890"/>
+  <!-- Pawn body -->
+  <rect x="52" y="50" width="8" height="10" rx="2" fill="#90D890"/>
+  <!-- Pawn head -->
+  <circle cx="56" cy="47" r="5" fill="#90D890"/>
+  <!-- Yellow sparkle -->
+  <path d="M7 6 L7.9 8.7 L10.7 8.7 L8.4 10.4 L9.3 13 L7 11.3 L4.7 13 L5.6 10.4 L3.3 8.7 L6.1 8.7Z" fill="#FFF0A0"/>
+  <!-- Blue sparkle -->
+  <path d="M54 7 L54.6 9 L56.7 9 L55 10.2 L55.6 12.2 L54 11 L52.4 12.2 L53 10.2 L51.3 9 L53.4 9Z" fill="#AED6F1"/>
 </svg>

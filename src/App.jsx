@@ -12,7 +12,7 @@ const GLOBAL_STYLE = `
   @keyframes float  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
   @keyframes pulse  { 0%,100%{opacity:.45} 50%{opacity:1} }
   @keyframes pop    { 0%{transform:scale(.85);opacity:0} 100%{transform:scale(1);opacity:1} }
-  @keyframes glow   { 0%,100%{box-shadow:0 0 8px #f0c04066} 50%{box-shadow:0 0 22px #f0c040cc} }
+  @keyframes glow   { 0%,100%{box-shadow:0 0 8px #f0808066} 50%{box-shadow:0 0 22px #f08080cc} }
 `;
 
 // ─── Sound ────────────────────────────────────────────────────────────────────
@@ -84,9 +84,9 @@ function Die({ value, rolling }) {
   const v = Math.max(1, Math.min(6, value || 1));
   return (
     <svg width="64" height="64" viewBox="0 0 100 100"
-      style={{ filter:"drop-shadow(0 0 10px #f0c04099)", animation: rolling ? "spin 0.12s linear infinite" : "none", flexShrink:0 }}>
-      <rect x="4" y="4" width="92" height="92" rx="18" fill="#1a1a2e" stroke="#f0c040" strokeWidth="4"/>
-      {(dots[v]||[]).map(([cx,cy],i) => <circle key={i} cx={cx} cy={cy} r="9" fill="#f0c040"/>)}
+      style={{ filter:"drop-shadow(0 0 10px #f0808099)", animation: rolling ? "spin 0.12s linear infinite" : "none", flexShrink:0 }}>
+      <rect x="4" y="4" width="92" height="92" rx="18" fill="#FFB3C6" stroke="#F08080" strokeWidth="4"/>
+      {(dots[v]||[]).map(([cx,cy],i) => <circle key={i} cx={cx} cy={cy} r="9" fill="white"/>)}
     </svg>
   );
 }
@@ -111,12 +111,12 @@ function SavedGamesPanel({ onLoad, onClose }) {
         </div>
         {saved.length === 0 && <div style={{ color:"#444", fontStyle:"italic", textAlign:"center", padding:24 }}>אין משחקים שמורים עדיין.</div>}
         {saved.map(g => (
-          <div key={g.id} style={{ background:"#111120", border:"1px solid #1e1e3a", borderRadius:12, padding:14, marginBottom:10, display:"flex", alignItems:"center", gap:10 }}>
+          <div key={g.id} style={{ background:"#fff0f5", border:"1px solid #f0d8e8", borderRadius:12, padding:14, marginBottom:10, display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ fontSize:30 }}>{g.game?.icon||"🎲"}</div>
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ color:"#f0c040", fontWeight:700, fontSize:14, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{g.game?.title||"משחק"}</div>
-              <div style={{ color:"#555", fontSize:11 }}>{g.game?.subtitle}</div>
-              <div style={{ color:"#444", fontSize:10, marginTop:3 }}>{new Date(g.savedAt).toLocaleDateString("he-IL")} • {g.players?.map(p=>p.name).join(", ")}</div>
+              <div style={{ color:"#f08080", fontWeight:700, fontSize:14, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{g.game?.title||"משחק"}</div>
+              <div style={{ color:"#b09090", fontSize:11 }}>{g.game?.subtitle}</div>
+              <div style={{ color:"#c0a0a8", fontSize:10, marginTop:3 }}>{new Date(g.savedAt).toLocaleDateString("he-IL")} • {g.players?.map(p=>p.name).join(", ")}</div>
             </div>
             <button onClick={() => { playSound("click"); onLoad(g); }} style={btnGold}>טען</button>
             <button onClick={() => deleteGame(g.id)} style={btnGhost}>🗑</button>
@@ -168,11 +168,11 @@ function BoardDisplay({ spaces, players }) {
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:3, width:"100%", maxWidth:468 }}>
       {grid.map((row,ri) => row.map((space,ci) => {
-        if (!space) return <div key={`${ri}-${ci}`} style={{ aspectRatio:"1", background:"#0a0a14" }}/>;
+        if (!space) return <div key={`${ri}-${ci}`} style={{ aspectRatio:"1", background:"#fff5f8" }}/>;
         const playersHere = playerMap[space.id]||[];
         const isWin = space.id===BOARD_SIZE;
-        const bg = isWin?"#f0c04028": space.type==="card"?"#4dff9120": space.type==="trap"?"#ff4d4d1a": space.type==="bonus"?"#4daaff1a":"#1a1a2e";
-        const border = isWin?"#f0c040": space.type==="card"?"#4dff9166": space.type==="trap"?"#ff4d4d66": space.type==="bonus"?"#4daaff66":"#2a2a4a";
+        const bg = isWin?"#f0808028": space.type==="card"?"#4dff9130": space.type==="trap"?"#ff4d4d22": space.type==="bonus"?"#4daaff22":"#fce8f2";
+        const border = isWin?"#f08080": space.type==="card"?"#4dff9188": space.type==="trap"?"#ff4d4d88": space.type==="bonus"?"#4daaff88":"#f0c8dc";
         return (
           <div key={space.id} title={space.name}
             style={{ aspectRatio:"1", background:bg, border:`1.5px solid ${border}`, borderRadius:7, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", position:"relative", overflow:"hidden", animation:isWin?"glow 2s ease-in-out infinite":"none" }}>
@@ -194,13 +194,13 @@ function BoardDisplay({ spaces, players }) {
 function PlayerCard({ player, index, isActive }) {
   const color = PLAYER_COLORS[index];
   return (
-    <div style={{ background:isActive?"#151528":"#0d0d1a", border:`1.5px solid ${isActive?color:"#1a1a3a"}`, borderRadius:12, padding:"9px 13px", display:"flex", alignItems:"center", gap:9, transition:"border-color .2s" }}>
-      <div style={{ width:30, height:30, borderRadius:"50%", background:color, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:900, color:"#000c", flexShrink:0 }}>
+    <div style={{ background:isActive?"#fff0f5":"#ffffff", border:`1.5px solid ${isActive?color:"#f0d8e8"}`, borderRadius:12, padding:"9px 13px", display:"flex", alignItems:"center", gap:9, transition:"border-color .2s" }}>
+      <div style={{ width:30, height:30, borderRadius:"50%", background:color, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:900, color:"#fff", flexShrink:0 }}>
         {player.name[0]?.toUpperCase()}
       </div>
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ color:isActive?color:"#999", fontWeight:700, fontSize:13, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{player.name}</div>
-        <div style={{ color:"#3a3a5a", fontSize:10, marginTop:1 }}>משבצת {player.position||"—"}{player.skip?" · מדלג":"" }</div>
+        <div style={{ color:isActive?color:"#c0909e", fontWeight:700, fontSize:13, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{player.name}</div>
+        <div style={{ color:"#d0b0c0", fontSize:10, marginTop:1 }}>משבצת {player.position||"—"}{player.skip?" · מדלג":"" }</div>
       </div>
       {isActive && <div style={{ color, fontSize:14 }}>▶</div>}
     </div>
@@ -208,14 +208,14 @@ function PlayerCard({ player, index, isActive }) {
 }
 
 // ─── Shared styles ─────────────────────────────────────────────────────────────
-const overlay  = { position:"fixed", inset:0, background:"#000000cc", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 };
-const card     = { background:"#0d0d1a", border:"1px solid #1e1e3a", borderRadius:20, padding:28 };
-const closeBtn = { background:"none", border:"none", color:"#555", cursor:"pointer", fontSize:20 };
-const btnPrimary = { background:"#f0c040", color:"#0a0a14", border:"none", borderRadius:14, padding:"14px 0", fontSize:17, fontWeight:900, cursor:"pointer" };
-const btnGold  = { background:"#f0c040", color:"#0d0d1a", border:"none", borderRadius:8, padding:"6px 13px", cursor:"pointer", fontWeight:700, fontSize:12, flexShrink:0 };
-const btnGhost = { background:"none", border:"1px solid #2a2a4a", color:"#555", borderRadius:8, padding:"6px 11px", cursor:"pointer", fontSize:12, flexShrink:0 };
-const input    = { width:"100%", background:"#1a1a2e", border:"1px solid #2a2a4a", borderRadius:10, padding:"11px 13px", color:"#fff", fontSize:14, outline:"none" };
-const page     = { minHeight:"100vh", background:"#0a0a14", fontFamily:"system-ui,-apple-system,sans-serif", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20 };
+const overlay  = { position:"fixed", inset:0, background:"rgba(45,10,20,0.55)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 };
+const card     = { background:"#ffffff", border:"1px solid #f0d8e8", borderRadius:20, padding:28 };
+const closeBtn = { background:"none", border:"none", color:"#c0a0b0", cursor:"pointer", fontSize:20 };
+const btnPrimary = { background:"#f08080", color:"#ffffff", border:"none", borderRadius:14, padding:"14px 0", fontSize:17, fontWeight:900, cursor:"pointer" };
+const btnGold  = { background:"#f08080", color:"#ffffff", border:"none", borderRadius:8, padding:"6px 13px", cursor:"pointer", fontWeight:700, fontSize:12, flexShrink:0 };
+const btnGhost = { background:"none", border:"1px solid #f0d0e0", color:"#c0909e", borderRadius:8, padding:"6px 11px", cursor:"pointer", fontSize:12, flexShrink:0 };
+const input    = { width:"100%", background:"#fff0f5", border:"1px solid #f0d0e0", borderRadius:10, padding:"11px 13px", color:"#2d1520", fontSize:14, outline:"none" };
+const page     = { minHeight:"100vh", background:"#fff5f8", fontFamily:"system-ui,-apple-system,sans-serif", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20 };
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
@@ -376,19 +376,34 @@ export default function App() {
       <style>{GLOBAL_STYLE}</style>
       {showSaved && <SavedGamesPanel onLoad={loadSavedGame} onClose={() => setShowSaved(false)}/>}
       <div style={{ textAlign:"center", width:"100%", maxWidth:420 }}>
-        <div style={{ fontSize:90, animation:"float 3s ease-in-out infinite", marginBottom:8 }}>🎲</div>
-        <div style={{ color:"#f0c040", fontWeight:900, fontSize:44, letterSpacing:3, marginBottom:4 }}>SARTORT</div>
-        <div style={{ color:"#444", fontSize:14, marginBottom:40 }}>משחק לוח הרפתקות</div>
+        <div style={{ animation:"float 3s ease-in-out infinite", marginBottom:8 }}>
+          <svg width="96" height="96" viewBox="0 0 100 100">
+            <rect x="8" y="16" width="56" height="56" rx="12" fill="#FFB3C6" stroke="#F090A0" strokeWidth="2"/>
+            <path d="M8,16 L22,4 L78,4 L64,16Z" fill="#FFD0DC"/>
+            <path d="M64,16 L78,4 L78,60 L64,72Z" fill="#F090A0"/>
+            <circle cx="24" cy="30" r="6" fill="white" opacity="0.85"/>
+            <circle cx="44" cy="30" r="6" fill="white" opacity="0.85"/>
+            <circle cx="34" cy="44" r="6" fill="white" opacity="0.85"/>
+            <circle cx="24" cy="58" r="6" fill="white" opacity="0.85"/>
+            <circle cx="44" cy="58" r="6" fill="white" opacity="0.85"/>
+            <ellipse cx="86" cy="92" rx="10" ry="5" fill="#90D890"/>
+            <rect x="80" y="76" width="12" height="16" rx="3" fill="#90D890"/>
+            <circle cx="86" cy="72" r="8" fill="#90D890"/>
+            <path d="M4 8 L5.2 11.5 L9 11.5 L6 13.8 L7.2 17.3 L4 15 L0.8 17.3 L2 13.8 L-1 11.5 L2.8 11.5Z" fill="#FFF0A0"/>
+          </svg>
+        </div>
+        <div style={{ color:"#f08080", fontWeight:900, fontSize:44, letterSpacing:3, marginBottom:4 }}>SARTORT</div>
+        <div style={{ color:"#c0909e", fontSize:14, marginBottom:40 }}>משחק לוח הרפתקות</div>
         <button onClick={() => { playSound("click"); setScreen("setup"); }}
           style={{ ...btnPrimary, display:"block", width:"100%", marginBottom:12 }}>
           🎮 משחק חדש
         </button>
         <button onClick={() => { playSound("click"); setShowSaved(true); }}
-          style={{ display:"block", width:"100%", background:"none", color:"#f0c040", border:"2px solid #f0c04033", borderRadius:14, padding:"13px 0", fontSize:16, fontWeight:700, cursor:"pointer", marginBottom:12 }}>
+          style={{ display:"block", width:"100%", background:"none", color:"#f08080", border:"2px solid #f0808033", borderRadius:14, padding:"13px 0", fontSize:16, fontWeight:700, cursor:"pointer", marginBottom:12 }}>
           📁 טען משחק שמור
         </button>
         <button onClick={() => { playSound("click"); setScreen("creator"); }}
-          style={{ display:"block", width:"100%", background:"none", color:"#818cf8", border:"2px solid #4f46e533", borderRadius:14, padding:"13px 0", fontSize:16, fontWeight:700, cursor:"pointer" }}>
+          style={{ display:"block", width:"100%", background:"none", color:"#7cb8f0", border:"2px solid #aed6f133", borderRadius:14, padding:"13px 0", fontSize:16, fontWeight:700, cursor:"pointer" }}>
           🎨 מחולל משחקים
         </button>
       </div>
@@ -399,16 +414,16 @@ export default function App() {
     <div style={{ ...page, justifyContent:"flex-start", paddingTop:36 }}>
       <style>{GLOBAL_STYLE}</style>
       <div style={{ width:"100%", maxWidth:440 }}>
-        <button onClick={() => setScreen("home")} style={{ background:"none", border:"none", color:"#444", cursor:"pointer", fontSize:14, marginBottom:22 }}>← חזור</button>
-        <div style={{ color:"#f0c040", fontWeight:900, fontSize:28, marginBottom:26 }}>🎮 הגדרת משחק</div>
+        <button onClick={() => setScreen("home")} style={{ background:"none", border:"none", color:"#c0909e", cursor:"pointer", fontSize:14, marginBottom:22 }}>← חזור</button>
+        <div style={{ color:"#f08080", fontWeight:900, fontSize:28, marginBottom:26 }}>🎮 הגדרת משחק</div>
 
         {/* Player count */}
         <div style={{ marginBottom:24 }}>
-          <div style={{ color:"#777", fontSize:13, marginBottom:10 }}>מספר שחקנים</div>
+          <div style={{ color:"#c0909e", fontSize:13, marginBottom:10 }}>מספר שחקנים</div>
           <div style={{ display:"flex", gap:8 }}>
             {[1,2,3,4].map(n => (
               <button key={n} onClick={() => { playSound("click"); setPlayerCount(n); }}
-                style={{ flex:1, background:playerCount===n?"#f0c040":"#1a1a2e", color:playerCount===n?"#0d0d1a":"#666", border:`1.5px solid ${playerCount===n?"#f0c040":"#2a2a4a"}`, borderRadius:12, padding:"12px 0", fontSize:20, fontWeight:900, cursor:"pointer" }}>
+                style={{ flex:1, background:playerCount===n?"#f08080":"#fff0f5", color:playerCount===n?"#ffffff":"#c0909e", border:`1.5px solid ${playerCount===n?"#f08080":"#f0d0e0"}`, borderRadius:12, padding:"12px 0", fontSize:20, fontWeight:900, cursor:"pointer" }}>
                 {n}
               </button>
             ))}
@@ -417,7 +432,7 @@ export default function App() {
 
         {/* Player names */}
         <div style={{ marginBottom:24 }}>
-          <div style={{ color:"#777", fontSize:13, marginBottom:10 }}>שמות שחקנים</div>
+          <div style={{ color:"#c0909e", fontSize:13, marginBottom:10 }}>שמות שחקנים</div>
           {Array.from({ length:playerCount }).map((_,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
               <div style={{ width:14, height:14, borderRadius:"50%", background:PLAYER_COLORS[i], flexShrink:0 }}/>
@@ -429,13 +444,13 @@ export default function App() {
 
         {/* Theme selection */}
         <div style={{ marginBottom:30 }}>
-          <div style={{ color:"#777", fontSize:13, marginBottom:12 }}>בחר נושא</div>
+          <div style={{ color:"#c0909e", fontSize:13, marginBottom:12 }}>בחר נושא</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             {THEMES.map(t => (
               <button key={t.id} onClick={() => { playSound("click"); setSelectedTheme(t.id); }}
-                style={{ background:selectedTheme===t.id?"#1e1e3a":"#111120", border:`2px solid ${selectedTheme===t.id?"#f0c040":"#1e1e3a"}`, borderRadius:14, padding:"14px 10px", cursor:"pointer", textAlign:"center", transition:"all .15s" }}>
+                style={{ background:selectedTheme===t.id?"#fff0f5":"#ffffff", border:`2px solid ${selectedTheme===t.id?"#f08080":"#f0d8e8"}`, borderRadius:14, padding:"14px 10px", cursor:"pointer", textAlign:"center", transition:"all .15s" }}>
                 <div style={{ fontSize:28, marginBottom:4 }}>{t.label.split(" ")[0]}</div>
-                <div style={{ color:selectedTheme===t.id?"#f0c040":"#666", fontSize:12, fontWeight:700 }}>
+                <div style={{ color:selectedTheme===t.id?"#f08080":"#c0909e", fontSize:12, fontWeight:700 }}>
                   {t.label.split(" ").slice(1).join(" ")}
                 </div>
               </button>
@@ -458,8 +473,8 @@ export default function App() {
         <style>{GLOBAL_STYLE}</style>
         <div style={{ textAlign:"center", maxWidth:420 }}>
           <div style={{ fontSize:90, animation:"float 1.8s ease-in-out infinite", marginBottom:14 }}>🏆</div>
-          <div style={{ color:"#f0c040", fontWeight:900, fontSize:38, marginBottom:6 }}>{w?.name} ניצח!</div>
-          <div style={{ color:"#444", fontSize:16, marginBottom:36 }}>{game?.title}</div>
+          <div style={{ color:"#f08080", fontWeight:900, fontSize:38, marginBottom:6 }}>{w?.name} ניצח!</div>
+          <div style={{ color:"#c0909e", fontSize:16, marginBottom:36 }}>{game?.title}</div>
           <div style={{ display:"flex", gap:12, justifyContent:"center" }}>
             <button onClick={() => { playSound("click"); setWinner(null); setScreen("setup"); }} style={{ ...btnPrimary, padding:"14px 30px" }}>🎮 שחק שוב</button>
             <button onClick={() => { playSound("click"); setScreen("home"); }} style={{ background:"none", color:"#f0c040", border:"2px solid #f0c04033", borderRadius:14, padding:"14px 30px", fontSize:16, fontWeight:700, cursor:"pointer" }}>🏠 בית</button>
@@ -473,7 +488,7 @@ export default function App() {
     const cp = players[currentPlayer];
     const blocked = !canRoll || rolling || !!activeEvent;
     return (
-      <div style={{ minHeight:"100vh", background:"#0a0a14", fontFamily:"system-ui,-apple-system,sans-serif", display:"flex", flexDirection:"column", alignItems:"center", padding:"14px 10px 30px" }}>
+      <div style={{ minHeight:"100vh", background:"#fff5f8", fontFamily:"system-ui,-apple-system,sans-serif", display:"flex", flexDirection:"column", alignItems:"center", padding:"14px 10px 30px" }}>
         <style>{GLOBAL_STYLE}</style>
         {activeEvent && <EventModal event={activeEvent} onClose={handleEventClose}/>}
 
@@ -481,8 +496,8 @@ export default function App() {
         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, width:"100%", maxWidth:468 }}>
           <div style={{ fontSize:26 }}>{game.icon}</div>
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ color:"#f0c040", fontWeight:900, fontSize:17, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{game.title}</div>
-            <div style={{ color:"#333", fontSize:11 }}>{game.subtitle}</div>
+            <div style={{ color:"#f08080", fontWeight:900, fontSize:17, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{game.title}</div>
+            <div style={{ color:"#c0909e", fontSize:11 }}>{game.subtitle}</div>
           </div>
           <button onClick={saveGame} style={btnGhost} title="שמור">💾</button>
           <button onClick={() => { playSound("click"); setScreen("home"); }} style={{ ...btnGhost, fontSize:18, borderColor:"transparent" }}>✕</button>
@@ -492,10 +507,10 @@ export default function App() {
 
         {/* Legend */}
         <div style={{ display:"flex", gap:12, marginTop:8, flexWrap:"wrap", justifyContent:"center" }}>
-          {[{c:"#4dff9166",l:"מזל"},{c:"#ff4d4d66",l:"מלכודת"},{c:"#4daaff66",l:"בונוס"},{c:"#f0c04066",l:"סיום"}].map(({c,l}) => (
+          {[{c:"#4dff9188",l:"מזל"},{c:"#ff4d4d88",l:"מלכודת"},{c:"#4daaff88",l:"בונוס"},{c:"#f0808088",l:"סיום"}].map(({c,l}) => (
             <div key={l} style={{ display:"flex", alignItems:"center", gap:5 }}>
               <div style={{ width:12, height:12, borderRadius:3, border:`2px solid ${c}`, background:c+"44" }}/>
-              <span style={{ color:"#444", fontSize:11 }}>{l}</span>
+              <span style={{ color:"#c0909e", fontSize:11 }}>{l}</span>
             </div>
           ))}
         </div>
@@ -509,16 +524,16 @@ export default function App() {
         <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:14, marginTop:18 }}>
           <Die value={diceValue} rolling={rolling}/>
           <button onClick={rollDice} disabled={blocked}
-            style={{ ...btnPrimary, padding:"14px 38px", background:!blocked?"#f0c040":"#1a1a2e", color:!blocked?"#0a0a14":"#333", cursor:!blocked?"pointer":"not-allowed", animation:!blocked?"glow 2s ease-in-out infinite":"none" }}>
+            style={{ ...btnPrimary, padding:"14px 38px", background:!blocked?"#f08080":"#fce8f2", color:!blocked?"#ffffff":"#c0b0b8", cursor:!blocked?"pointer":"not-allowed", animation:!blocked?"glow 2s ease-in-out infinite":"none" }}>
             {rolling ? "מטיל..." : `🎲 הטל קוביה — ${cp?.name}`}
           </button>
         </div>
 
         {/* Log */}
-        <div style={{ width:"100%", maxWidth:468, marginTop:16, background:"#0d0d1a", border:"1px solid #1a1a2e", borderRadius:14, padding:"10px 14px", maxHeight:130, overflowY:"auto" }}>
-          <div style={{ color:"#2a2a3a", fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:6 }}>יומן משחק</div>
+        <div style={{ width:"100%", maxWidth:468, marginTop:16, background:"#ffffff", border:"1px solid #f0d8e8", borderRadius:14, padding:"10px 14px", maxHeight:130, overflowY:"auto" }}>
+          <div style={{ color:"#d0b0c0", fontSize:10, fontWeight:700, letterSpacing:1, marginBottom:6 }}>יומן משחק</div>
           {[...log].reverse().map((entry,i) => (
-            <div key={i} style={{ color:i===0?"#777":"#333", fontSize:12, paddingBottom:3, lineHeight:1.4 }}>{entry}</div>
+            <div key={i} style={{ color:i===0?"#a07080":"#cca0b0", fontSize:12, paddingBottom:3, lineHeight:1.4 }}>{entry}</div>
           ))}
         </div>
       </div>
