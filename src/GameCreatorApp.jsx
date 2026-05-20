@@ -202,12 +202,28 @@ function GameCard({ game, onPlay }) {
   );
 }
 
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function Toast({ msg }) {
+  if (!msg) return null;
+  return (
+    <div style={{ position: "fixed", bottom: 30, left: "50%", transform: "translateX(-50%)", background: "#ffffff", border: "1px solid #f0d8e8", borderRadius: 14, padding: "14px 24px", boxShadow: "0 8px 32px #f0808033", fontSize: 14, fontWeight: 600, color: "#2d1520", zIndex: 999, textAlign: "center", animation: "pop .2s ease-out", whiteSpace: "nowrap" }}>
+      {msg}
+    </div>
+  );
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function GameCreatorApp({ onBack }) {
   const [gamesList, setGamesList] = useState([
     { id: "1", title: "מרוץ הדרקונים", template: "race",   author: "חיים" },
     { id: "2", title: "טריוויה טק",    template: "trivia", author: "מערכת" },
   ]);
+  const [toast, setToast] = useState(null);
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }
 
   const [tab,              setTab]             = useState("home");
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -257,6 +273,8 @@ export default function GameCreatorApp({ onBack }) {
 
   return (
     <div style={st.page}>
+      <style>{`@keyframes pop { 0%{transform:translateX(-50%) scale(.85);opacity:0} 100%{transform:translateX(-50%) scale(1);opacity:1} }`}</style>
+      <Toast msg={toast} />
       {/* Header */}
       <header style={st.header}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -402,7 +420,7 @@ export default function GameCreatorApp({ onBack }) {
                 style={{ ...st.btnIndigo, fontSize: 12, padding: "9px 14px" }}>➕ צור משחק חדש</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12 }}>
-              {gamesList.map(g => <GameCard key={g.id} game={g} onPlay={() => alert(`"${g.title}" — בקרוב תוכל לשחק ישירות מהקהילה! 🎲`)} />)}
+              {gamesList.map(g => <GameCard key={g.id} game={g} onPlay={(game) => showToast(`🎲 "${game.title}" — בקרוב תוכל לשחק ישירות מהקהילה!`)} />)}
             </div>
           </div>
         )}
