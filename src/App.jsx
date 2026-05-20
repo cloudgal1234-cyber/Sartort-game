@@ -369,7 +369,15 @@ export default function App() {
   // Screens
   // ─────────────────────────────────────────────────────────────────────────────
 
-  if (screen === "creator") return <GameCreatorApp onBack={() => setScreen("home")} />;
+  if (screen === "creator") return (
+    <GameCreatorApp
+      onBack={() => setScreen("home")}
+      onStartGame={({ themeId }) => {
+        setSelectedTheme(themeId);
+        setScreen("setup");
+      }}
+    />
+  );
 
   if (screen === "home") return (
     <div style={page}>

@@ -213,7 +213,16 @@ function Toast({ msg }) {
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────────
-export default function GameCreatorApp({ onBack }) {
+const TEMPLATE_TO_THEME = {
+  race: "medieval",
+  monopoly: "ocean",
+  cards: "wizards",
+  trivia: "space",
+  adventure: "dragons",
+  combat: "volcano",
+};
+
+export default function GameCreatorApp({ onBack, onStartGame }) {
   const [gamesList, setGamesList] = useState([
     { id: "1", title: "מרוץ הדרקונים", template: "race",   author: "חיים" },
     { id: "2", title: "טריוויה טק",    template: "trivia", author: "מערכת" },
@@ -420,7 +429,20 @@ export default function GameCreatorApp({ onBack }) {
                 style={{ ...st.btnIndigo, fontSize: 12, padding: "9px 14px" }}>➕ צור משחק חדש</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12 }}>
-              {gamesList.map(g => <GameCard key={g.id} game={g} onPlay={(game) => showToast(`🎲 "${game.title}" — בקרוב תוכל לשחק ישירות מהקהילה!`)} />)}
+              {gamesList.map(g => (
+                <GameCard
+                  key={g.id}
+                  game={g}
+                  onPlay={(game) => {
+                    const themeId = TEMPLATE_TO_THEME[game.template] || "medieval";
+                    if (onStartGame) {
+                      onStartGame({ themeId });
+                    } else {
+                      showToast(`🎲 "${game.title}" — לא ניתן להפעיל כרגע`);
+                    }
+                  }}
+                />
+              ))}
             </div>
           </div>
         )}
