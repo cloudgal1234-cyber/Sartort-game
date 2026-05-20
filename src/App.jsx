@@ -208,7 +208,7 @@ function PlayerCard({ player, index, isActive }) {
 }
 
 // ─── Shared styles ─────────────────────────────────────────────────────────────
-const overlay  = { position:"fixed", inset:0, background:"rgba(45,10,20,0.55)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 };
+const overlay  = { position:"fixed", inset:0, background:"rgba(200,100,120,0.22)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300 };
 const card     = { background:"#ffffff", border:"1px solid #f0d8e8", borderRadius:20, padding:28 };
 const closeBtn = { background:"none", border:"none", color:"#c0a0b0", cursor:"pointer", fontSize:20 };
 const btnPrimary = { background:"#f08080", color:"#ffffff", border:"none", borderRadius:14, padding:"14px 0", fontSize:17, fontWeight:900, cursor:"pointer" };

@@ -173,20 +173,30 @@ function LivePreview({ template, gameTitle, themeColor, playerName, logoFile }) 
 }
 
 // ── Community Game Card ────────────────────────────────────────────────────────
-function GameCard({ game }) {
+function GameCard({ game, onPlay }) {
   const tpl = GAME_TEMPLATES.find(t => t.id === game.template) || GAME_TEMPLATES[0];
+  const [hovered, setHovered] = useState(false);
   return (
-    <div style={{ ...st.card, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: tpl.color + "22", border: `1px solid ${tpl.color}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{tpl.icon}</div>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ ...st.card, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "border-color .15s, box-shadow .15s", borderColor: hovered ? "#f0a0c0" : C.border, boxShadow: hovered ? "0 4px 18px #f0808018" : "none" }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: tpl.color + "18", border: `2px solid ${tpl.color}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{tpl.icon}</div>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: C.text1, marginBottom: 2 }}>{game.title}</div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: C.text1, marginBottom: 3 }}>{game.title}</div>
           <div style={{ fontSize: 11, color: C.text3 }}>יוצר: {game.author} • {tpl.title.split(" ")[0]}</div>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ padding: "2px 10px", borderRadius: 6, fontSize: 10, background: C.bg3, color: C.indigoText, border: `1px solid ${C.border2}` }}>מוכן לריצה</span>
-        <button style={{ ...st.btnIndigo, padding: "6px 12px", fontSize: 12 }}>▶ שחק</button>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 10, fontWeight: 600, background: "#b8edb822", color: "#4a9a4a", border: "1px solid #b8edb866" }}>✓ מוכן</span>
+        <button
+          onClick={() => onPlay && onPlay(game)}
+          style={{ background: "#f08080", color: "#fff", border: "none", borderRadius: 10, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#e86868"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#f08080"; }}
+        >▶ שחק</button>
       </div>
     </div>
   );
@@ -275,9 +285,9 @@ export default function GameCreatorApp({ onBack }) {
         {tab === "home" && (
           <div>
             {/* AI banner */}
-            <div style={{ position: "relative", borderRadius: 20, background: "linear-gradient(135deg, #0f0f2e, #0a0a14, #160016)", border: `1px solid ${C.indigo}33`, padding: "28px 28px 32px", marginBottom: 36, overflow: "hidden" }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: `${C.indigo}12`, color: C.indigoText, border: `1px solid ${C.indigo}33`, marginBottom: 12 }}>✨ יצירה חכמה מתיאור</span>
-              <h2 style={{ fontSize: 24, fontWeight: 900, color: "#fff", margin: "0 0 8px" }}>יש לך רעיון למשחק בראש?</h2>
+            <div style={{ position: "relative", borderRadius: 20, background: "linear-gradient(135deg, #ffe0ec, #fff5f8, #e8f0ff)", border: `1px solid #f0c0d0`, padding: "28px 28px 32px", marginBottom: 36, overflow: "hidden" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#f0808018", color: "#f08080", border: "1px solid #f0808033", marginBottom: 12 }}>✨ יצירה חכמה מתיאור</span>
+              <h2 style={{ fontSize: 24, fontWeight: 900, color: "#2d1520", margin: "0 0 8px" }}>יש לך רעיון למשחק בראש?</h2>
               <p style={{ color: C.text2, fontSize: 13, lineHeight: 1.7, margin: "0 0 20px", maxWidth: 520 }}>
                 תאר את המשחק שלך במילים פשוטות, והמערכת תתאים לך את התבנית הנכונה ותפתח את סטודיו העיצוב.
               </p>
@@ -300,7 +310,7 @@ export default function GameCreatorApp({ onBack }) {
               {GAME_TEMPLATES.map(tpl => (
                 <div key={tpl.id} onClick={() => goCreate(tpl)}
                   style={{ ...st.card, cursor: "pointer", display: "flex", flexDirection: "column", justifyContent: "space-between", transition: "border-color .15s, background .15s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = C.border2; e.currentTarget.style.background = "#111120"; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#f0a0c0"; e.currentTarget.style.background = "#fff0f5"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.bg2; }}
                 >
                   <div>
@@ -392,7 +402,7 @@ export default function GameCreatorApp({ onBack }) {
                 style={{ ...st.btnIndigo, fontSize: 12, padding: "9px 14px" }}>➕ צור משחק חדש</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12 }}>
-              {gamesList.map(g => <GameCard key={g.id} game={g} />)}
+              {gamesList.map(g => <GameCard key={g.id} game={g} onPlay={() => alert(`"${g.title}" — בקרוב תוכל לשחק ישירות מהקהילה! 🎲`)} />)}
             </div>
           </div>
         )}
