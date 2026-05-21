@@ -238,10 +238,11 @@ export default function App() {
   const [selectedTheme, setSelectedTheme] = useState(THEMES[0].id);
 
   // Mini-game state
-  const [activeFormat,      setActiveFormat]      = useState(null);
-  const [activeTopic,       setActiveTopic]       = useState(null);
-  const [activeCustomTopic, setActiveCustomTopic] = useState(null);
-  const [activeName,        setActiveName]        = useState(null);
+  const [activeFormat,          setActiveFormat]          = useState(null);
+  const [activeTopic,           setActiveTopic]           = useState(null);
+  const [activeCustomTopic,     setActiveCustomTopic]     = useState(null);
+  const [activeCustomTopicDesc, setActiveCustomTopicDesc] = useState(null);
+  const [activeName,            setActiveName]            = useState(null);
 
   const playersRef  = useRef(players);
   const currentPRef = useRef(currentPlayer);
@@ -379,8 +380,8 @@ export default function App() {
   if (screen === "creator") return (
     <GameCreatorApp
       onBack={() => setScreen("home")}
-      onStartGame={({ themeId, format, topic, customTopic, name }) => {
-        setActiveFormat(format); setActiveTopic(topic); setActiveCustomTopic(customTopic || null); setActiveName(name);
+      onStartGame={({ themeId, format, topic, customTopic, customTopicDesc, name }) => {
+        setActiveFormat(format); setActiveTopic(topic); setActiveCustomTopic(customTopic || null); setActiveCustomTopicDesc(customTopicDesc || null); setActiveName(name);
         if (!format || format === "board" || format === "digital") {
           setSelectedTheme(themeId || THEMES[0].id);
           setScreen("setup");
@@ -426,10 +427,10 @@ export default function App() {
   if (screen === "minigame") {
     const miniPlayers = playerNames.slice(0, playerCount).map((name, i) => ({ name: name.trim() || `שחקן ${i+1}`, color: PLAYER_COLORS[i] }));
     const goHome = () => setScreen("home");
-    if (activeFormat === "trivia") return <TriviaGame name={activeName} topic={activeTopic} customTopic={activeCustomTopic} players={miniPlayers} onBack={goHome} />;
-    if (activeFormat === "memory") return <MemoryGame topic={activeTopic} customTopic={activeCustomTopic} name={activeName} onBack={goHome} />;
-    if (activeFormat === "party")  return <PartyGame  name={activeName} topic={activeTopic} customTopic={activeCustomTopic} players={miniPlayers} onBack={goHome} />;
-    if (activeFormat === "escape") return <EscapeGame name={activeName} topic={activeTopic} customTopic={activeCustomTopic} onBack={goHome} />;
+    if (activeFormat === "trivia") return <TriviaGame name={activeName} topic={activeTopic} customTopic={activeCustomTopic} customTopicDesc={activeCustomTopicDesc} players={miniPlayers} onBack={goHome} />;
+    if (activeFormat === "memory") return <MemoryGame topic={activeTopic} customTopic={activeCustomTopic} customTopicDesc={activeCustomTopicDesc} name={activeName} onBack={goHome} />;
+    if (activeFormat === "party")  return <PartyGame  name={activeName} topic={activeTopic} customTopic={activeCustomTopic} customTopicDesc={activeCustomTopicDesc} players={miniPlayers} onBack={goHome} />;
+    if (activeFormat === "escape") return <EscapeGame name={activeName} topic={activeTopic} customTopic={activeCustomTopic} customTopicDesc={activeCustomTopicDesc} onBack={goHome} />;
   }
 
   if (screen === "home") return (

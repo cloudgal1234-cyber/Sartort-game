@@ -687,7 +687,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
   function handleSave() {
     if (!gameTitle.trim()) { showToast("אנא הכנס שם למשחק"); return; }
     setGamesList(prev => [
-      { id: Date.now().toString(), title: gameTitle, template: selectedTemplate?.id || "race", format: gameFormat, topic: customTopic || gameTopic, author: "אתה" },
+      { id: Date.now().toString(), title: gameTitle, template: selectedTemplate?.id || "race", format: gameFormat, topic: customTopic || gameTopic, topicDesc: customTopic ? customTopicDesc : "", author: "אתה" },
       ...prev,
     ]);
     showToast("✓ המשחק נשמר ושותף לקהילה!");
@@ -1216,6 +1216,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
                         format: game.format || "board",
                         topic: isPreset ? rawTopic : "fantasy",
                         customTopic: isPreset ? null : rawTopic,
+                        customTopicDesc: isPreset ? null : (game.topicDesc || null),
                         name: game.title,
                       });
                     }

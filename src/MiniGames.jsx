@@ -458,25 +458,29 @@ function mapCustomTopicToPreset(customTopicText) {
   return best;
 }
 
-function resolveTopic(topic, customTopic) {
-  if (customTopic) return mapCustomTopicToPreset(customTopic);
+function resolveTopic(topic, customTopic, customTopicDesc) {
+  if (customTopic) {
+    // Combine name + description so detailed descriptions improve matching
+    const combined = [customTopic, customTopicDesc].filter(Boolean).join(" ");
+    return mapCustomTopicToPreset(combined);
+  }
   return topic || "default";
 }
 
-function getQuestions(topic, customTopic) {
-  const resolved = resolveTopic(topic, customTopic);
+function getQuestions(topic, customTopic, customTopicDesc) {
+  const resolved = resolveTopic(topic, customTopic, customTopicDesc);
   return TRIVIA_BY_TOPIC[resolved] || TRIVIA_BY_TOPIC.default;
 }
-function getRiddles(topic, customTopic) {
-  const resolved = resolveTopic(topic, customTopic);
+function getRiddles(topic, customTopic, customTopicDesc) {
+  const resolved = resolveTopic(topic, customTopic, customTopicDesc);
   return ESCAPE_BY_TOPIC[resolved] || ESCAPE_BY_TOPIC.default;
 }
-function getPartyPrompts(topic, customTopic) {
-  const resolved = resolveTopic(topic, customTopic);
+function getPartyPrompts(topic, customTopic, customTopicDesc) {
+  const resolved = resolveTopic(topic, customTopic, customTopicDesc);
   return PARTY_BY_TOPIC[resolved] || PARTY_BY_TOPIC.default;
 }
-function getMemoryEmojis(topic, customTopic) {
-  const resolved = resolveTopic(topic, customTopic);
+function getMemoryEmojis(topic, customTopic, customTopicDesc) {
+  const resolved = resolveTopic(topic, customTopic, customTopicDesc);
   return MEMORY_EMOJIS[resolved] || MEMORY_EMOJIS.default;
 }
 
@@ -490,10 +494,11 @@ function BackBtn({ onBack }) {
   return <button onClick={onBack} style={{ ...ghost, marginBottom: 16, alignSelf: "flex-start" }}>← חזור לבית</button>;
 }
 
-function TopicBadge({ topic, customTopic }) {
+function TopicBadge({ topic, customTopic, customTopicDesc }) {
   const TOPIC_LABELS = { fantasy:"🧙 פנטזיה", space:"🚀 חלל", sports:"⚽ ספורט", animals:"🦁 בעלי חיים", history:"🏛️ היסטוריה", science:"🔬 מדע", ocean:"🌊 ים", city:"🏙️ עיר", nature:"🌿 טבע", music:"🎵 מוזיקה", food:"🍕 אוכל", movies:"🎬 קולנוע" };
   if (customTopic) {
-    const resolved = mapCustomTopicToPreset(customTopic);
+    const combined = [customTopic, customTopicDesc].filter(Boolean).join(" ");
+    const resolved = mapCustomTopicToPreset(combined);
     const resolvedLabel = TOPIC_LABELS[resolved];
     return (
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
@@ -517,8 +522,8 @@ function TopicBadge({ topic, customTopic }) {
 }
 
 // ── Trivia Game ───────────────────────────────────────────────────────────────
-export function TriviaGame({ name, topic, customTopic, players, onBack }) {
-  const questions = getQuestions(topic, customTopic);
+export function TriviaGame({ name, topic, customTopic, customTopicDesc, players, onBack }) {
+  const questions = getQuestions(topic, customTopic, customTopicDesc);
   const [qi, setQi]         = useState(0);
   const [selected, setSelected] = useState(null);
   const [scores, setScores] = useState(players.map(() => 0));
@@ -549,7 +554,7 @@ export function TriviaGame({ name, topic, customTopic, players, onBack }) {
         <BackBtn onBack={onBack} />
         <div style={{ ...card, textAlign: "center" }}>
           <div style={{ fontSize: 64, marginBottom: 12 }}>🏆</div>
-          <TopicBadge topic={topic} customTopic={customTopic} />
+          <TopicBadge topic={topic} customTopic={customTopic} customTopicDesc={customTopicDesc} />
           <div style={{ fontSize: 26, fontWeight: 900, color: "#f08080", marginBottom: 8 }}>{winner.name} ניצח!</div>
           <div style={{ fontSize: 14, color: "#a07888", marginBottom: 20 }}>{max} נקודות מתוך {total}</div>
           {players.map((p, i) => (
@@ -568,7 +573,7 @@ export function TriviaGame({ name, topic, customTopic, players, onBack }) {
     <div style={pg}>
       <BackBtn onBack={onBack} />
       <div style={card}>
-        <TopicBadge topic={topic} customTopic={customTopic} />
+        <TopicBadge topic={topic} customTopic={customTopic} customTopicDesc={customTopicDesc} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <div style={{ fontSize: 12, color: "#c0909e" }}>שאלה {qi + 1}/{total}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: PLAYER_COLORS[cp % 4] }}>{players[cp]?.name} משיב</div>
@@ -620,8 +625,8 @@ function shuffled(emojis) {
   return pairs;
 }
 
-export function MemoryGame({ topic, customTopic, name, onBack }) {
-  const emojis = getMemoryEmojis(topic, customTopic);
+export function MemoryGame({ topic, customTopic, customTopicDesc, name, onBack }) {
+  const emojis = getMemoryEmojis(topic, customTopic, customTopicDesc);
   const [cards, setCards] = useState(() => shuffled(emojis));
   const [open, setOpen]   = useState([]);
   const [moves, setMoves] = useState(0);
@@ -659,7 +664,7 @@ export function MemoryGame({ topic, customTopic, name, onBack }) {
       <BackBtn onBack={onBack} />
       <div style={{ ...card, textAlign: "center" }}>
         <div style={{ fontSize: 64, marginBottom: 12 }}>🎉</div>
-        <TopicBadge topic={topic} customTopic={customTopic} />
+        <TopicBadge topic={topic} customTopic={customTopic} customTopicDesc={customTopicDesc} />
         <div style={{ fontSize: 24, fontWeight: 900, color: "#f08080", marginBottom: 8 }}>כל הזוגות נמצאו!</div>
         <div style={{ fontSize: 15, color: "#a07888", marginBottom: 24 }}>{moves} מהלכים</div>
         <button onClick={restart} style={{ ...btn, marginBottom: 12 }}>שחק שוב</button>
@@ -671,7 +676,7 @@ export function MemoryGame({ topic, customTopic, name, onBack }) {
   return (
     <div style={pg}>
       <BackBtn onBack={onBack} />
-      <TopicBadge topic={topic} customTopic={customTopic} />
+      <TopicBadge topic={topic} customTopic={customTopic} customTopicDesc={customTopicDesc} />
       <div style={{ width: "100%", maxWidth: 360, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div style={{ fontWeight: 900, fontSize: 20, color: "#f08080" }}>{name || "זיכרון"}</div>
         <div style={{ fontSize: 13, color: "#a07888" }}>מהלכים: {moves} | {cards.filter(c=>c.matched).length/2}/{emojis.length} זוגות</div>
@@ -695,8 +700,8 @@ export function MemoryGame({ topic, customTopic, name, onBack }) {
 }
 
 // ── Party Game (Truth or Dare) ────────────────────────────────────────────────
-export function PartyGame({ name, topic, customTopic, players, onBack }) {
-  const prompts = getPartyPrompts(topic, customTopic);
+export function PartyGame({ name, topic, customTopic, customTopicDesc, players, onBack }) {
+  const prompts = getPartyPrompts(topic, customTopic, customTopicDesc);
   const [cp, setCp]       = useState(0);
   const [choice, setChoice] = useState(null);
   const [round, setRound] = useState(0);
@@ -715,7 +720,7 @@ export function PartyGame({ name, topic, customTopic, players, onBack }) {
     <div style={pg}>
       <BackBtn onBack={onBack} />
       <div style={card}>
-        <TopicBadge topic={topic} customTopic={customTopic} />
+        <TopicBadge topic={topic} customTopic={customTopic} customTopicDesc={customTopicDesc} />
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 13, color: "#c0909e", marginBottom: 4 }}>תור של</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: PLAYER_COLORS[cp % 4] }}>{players[cp]?.name}</div>
@@ -759,8 +764,8 @@ export function PartyGame({ name, topic, customTopic, players, onBack }) {
 }
 
 // ── Escape Room ───────────────────────────────────────────────────────────────
-export function EscapeGame({ name, topic, customTopic, onBack }) {
-  const riddles = getRiddles(topic, customTopic);
+export function EscapeGame({ name, topic, customTopic, customTopicDesc, onBack }) {
+  const riddles = getRiddles(topic, customTopic, customTopicDesc);
   const [step, setStep]     = useState(0);
   const [answer, setAnswer] = useState("");
   const [error, setError]   = useState(false);
@@ -787,7 +792,7 @@ export function EscapeGame({ name, topic, customTopic, onBack }) {
       <BackBtn onBack={onBack} />
       <div style={{ ...card, textAlign: "center" }}>
         <div style={{ fontSize: 64, marginBottom: 12 }}>🔓</div>
-        <TopicBadge topic={topic} customTopic={customTopic} />
+        <TopicBadge topic={topic} customTopic={customTopic} customTopicDesc={customTopicDesc} />
         <div style={{ fontSize: 24, fontWeight: 900, color: "#f08080", marginBottom: 8 }}>ברחתם מהחדר!</div>
         <div style={{ fontSize: 14, color: "#a07888", marginBottom: 24 }}>פתרתם את כל {riddles.length} החידות</div>
         <button onClick={onBack} style={btn}>חזור</button>
@@ -799,7 +804,7 @@ export function EscapeGame({ name, topic, customTopic, onBack }) {
     <div style={pg}>
       <BackBtn onBack={onBack} />
       <div style={card}>
-        <TopicBadge topic={topic} customTopic={customTopic} />
+        <TopicBadge topic={topic} customTopic={customTopic} customTopicDesc={customTopicDesc} />
         <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
           {riddles.map((_, i) => (
             <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < step ? "#4a9a4a" : i === step ? "#f08080" : "#f0d8e8" }} />
