@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { THEMES } from "./gameData.js";
 import GameCreatorApp from "./GameCreatorApp.jsx";
+import { TriviaGame, MemoryGame, PartyGame, EscapeGame } from "./MiniGames.jsx";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PLAYER_COLORS = ["#ff4d4d", "#4daaff", "#4dff91", "#ffd700"];
@@ -236,6 +237,11 @@ export default function App() {
   const [playerNames, setPlayerNames] = useState(["שחקן 1", "שחקן 2", "שחקן 3", "שחקן 4"]);
   const [selectedTheme, setSelectedTheme] = useState(THEMES[0].id);
 
+  // Mini-game state
+  const [activeFormat, setActiveFormat] = useState(null);
+  const [activeTopic,  setActiveTopic]  = useState(null);
+  const [activeName,   setActiveName]   = useState(null);
+
   const playersRef  = useRef(players);
   const currentPRef = useRef(currentPlayer);
   const ivRef       = useRef(null);
@@ -372,12 +378,58 @@ export default function App() {
   if (screen === "creator") return (
     <GameCreatorApp
       onBack={() => setScreen("home")}
-      onStartGame={({ themeId }) => {
-        setSelectedTheme(themeId);
-        setScreen("setup");
+      onStartGame={({ themeId, format, topic, name }) => {
+        setActiveFormat(format); setActiveTopic(topic); setActiveName(name);
+        if (!format || format === "board" || format === "digital") {
+          setSelectedTheme(themeId || THEMES[0].id);
+          setScreen("setup");
+        } else if (format === "memory" || format === "escape") {
+          setScreen("minigame");
+        } else {
+          setScreen("minigame-setup");
+        }
       }}
     />
   );
+
+  if (screen === "minigame-setup") return (
+    <div style={{ ...page, justifyContent: "flex-start", paddingTop: 36 }}>
+      <style>{GLOBAL_STYLE}</style>
+      <div style={{ width: "100%", maxWidth: 440 }}>
+        <button onClick={() => setScreen("creator")} style={{ background: "none", border: "none", color: "#c0909e", cursor: "pointer", fontSize: 14, marginBottom: 22 }}>← חזור</button>
+        <div style={{ color: "#f08080", fontWeight: 900, fontSize: 26, marginBottom: 4 }}>{activeName}</div>
+        <div style={{ color: "#c0909e", fontSize: 13, marginBottom: 28 }}>הגדרת שחקנים לפני המשחק</div>
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ color: "#c0909e", fontSize: 13, marginBottom: 10 }}>מספר שחקנים</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[1,2,3,4].map(n => (
+              <button key={n} onClick={() => { playSound("click"); setPlayerCount(n); }}
+                style={{ flex:1, background: playerCount===n?"#f08080":"#fff0f5", color: playerCount===n?"#fff":"#c0909e", border:`1.5px solid ${playerCount===n?"#f08080":"#f0d0e0"}`, borderRadius:12, padding:"12px 0", fontSize:20, fontWeight:900, cursor:"pointer" }}>{n}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ color: "#c0909e", fontSize: 13, marginBottom: 10 }}>שמות שחקנים</div>
+          {Array.from({ length: playerCount }).map((_,i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+              <div style={{ width:14, height:14, borderRadius:"50%", background:PLAYER_COLORS[i], flexShrink:0 }}/>
+              <input value={playerNames[i]} onChange={e => { const n=[...playerNames]; n[i]=e.target.value; setPlayerNames(n); }} style={input} placeholder={`שחקן ${i+1}`}/>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => { playSound("click"); setScreen("minigame"); }} style={{ ...btnPrimary, display:"block", width:"100%" }}>🚀 התחל משחק!</button>
+      </div>
+    </div>
+  );
+
+  if (screen === "minigame") {
+    const miniPlayers = playerNames.slice(0, playerCount).map((name, i) => ({ name: name.trim() || `שחקן ${i+1}`, color: PLAYER_COLORS[i] }));
+    const goHome = () => setScreen("home");
+    if (activeFormat === "trivia") return <TriviaGame name={activeName} players={miniPlayers} onBack={goHome} />;
+    if (activeFormat === "memory") return <MemoryGame topic={activeTopic} name={activeName} onBack={goHome} />;
+    if (activeFormat === "party")  return <PartyGame  name={activeName} players={miniPlayers} onBack={goHome} />;
+    if (activeFormat === "escape") return <EscapeGame name={activeName} onBack={goHome} />;
+  }
 
   if (screen === "home") return (
     <div style={page}>
