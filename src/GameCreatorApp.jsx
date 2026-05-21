@@ -130,11 +130,11 @@ function CatFilter({ active, onChange }) {
 }
 
 // ── Live Preview ───────────────────────────────────────────────────────────────
-function LivePreview({ format, topic, customTopic, gameTitle, themeColor, playerName, logoFile, boardDesign }) {
+function LivePreview({ format, topic, customTopic, customTopicIcon, gameTitle, themeColor, playerName, logoFile, boardDesign }) {
   const tc = themeColor || "#f08080";
   const pn = playerName || "שחקן 1";
   const topicObj = TOPIC_PRESETS.find(t => t.id === topic) || TOPIC_PRESETS[0];
-  const displayIcon = customTopic ? "✏️" : topicObj.icon;
+  const displayIcon = customTopic ? (customTopicIcon || "⭐") : topicObj.icon;
   const displayLabel = customTopic || topicObj.label;
   const design = BOARD_DESIGNS.find(d => d.id === boardDesign) || BOARD_DESIGNS[0];
   const isDark = boardDesign && boardDesign !== "pastel";
@@ -450,6 +450,125 @@ const BOT_REPLIES = {
   },
 };
 
+// ── Emoji picker rows ──────────────────────────────────────────────────────────
+const EMOJI_OPTIONS = [
+  "⭐","🌟","💫","🔥","❄️","🌈","🌀","💎","🏆","👑",
+  "🦄","🐉","🦊","🐺","🦋","🦅","🐬","🐙","🌸","🌵",
+  "🍄","🍀","🌙","☀️","⚡","🌊","🏔️","🌋","🗺️","🔮",
+  "⚔️","🛡️","🪄","🎭","🎪","🎨","🎯","🚀","🛸","🌌",
+];
+
+// ── Invent Topic Panel ─────────────────────────────────────────────────────────
+function InventTopicPanel({ customTopic, setCustomTopic, customIcon, setCustomIcon, customDesc, setCustomDesc, onClear }) {
+  const [open, setOpen] = useState(false);
+  const isActive = !!customTopic;
+
+  return (
+    <div style={{ marginTop: 4, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          background: isActive ? "#f0808010" : C.bg0,
+          border: `2px ${isActive ? "solid" : "dashed"} ${isActive ? C.indigo : C.border}`,
+          borderRadius: 12, padding: "11px 14px", cursor: "pointer", transition: "all .2s",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 20 }}>{isActive ? (customIcon || "⭐") : "✨"}</span>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? C.indigoText : C.text2 }}>
+              {isActive ? customTopic : "המצאת נושא משלך?"}
+            </div>
+            <div style={{ fontSize: 10, color: C.text3 }}>
+              {isActive ? (customDesc || "נושא מומצא") : "לחץ כדי להגדיר עולם משחק ייחודי"}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {isActive && (
+            <button
+              onClick={e => { e.stopPropagation(); onClear(); setOpen(false); }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: C.text3, fontSize: 14, padding: "0 4px" }}
+            >✕</button>
+          )}
+          <span style={{ fontSize: 12, color: C.text3 }}>{open ? "▲" : "▼"}</span>
+        </div>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 10, padding: 16, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 12, display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* Name */}
+          <div>
+            <label style={st.label}>שם הנושא / העולם שהמצאת</label>
+            <input
+              value={customTopic}
+              onChange={e => setCustomTopic(e.target.value)}
+              placeholder='לדוגמה: ממלכת הגמדים הטסים, כוכב הצבים הגלאקטיים...'
+              style={{ ...st.input, fontSize: 13, borderColor: customTopic ? C.indigo : C.border }}
+              autoFocus
+            />
+          </div>
+
+          {/* Icon picker */}
+          <div>
+            <label style={st.label}>בחר אייקון לנושא שלך</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {EMOJI_OPTIONS.map(em => (
+                <button
+                  key={em}
+                  onClick={() => setCustomIcon(em)}
+                  style={{
+                    width: 36, height: 36, borderRadius: 8, border: `2px solid ${customIcon === em ? C.indigo : C.border}`,
+                    background: customIcon === em ? "#f0808018" : C.bg2,
+                    cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all .12s",
+                  }}
+                >{em}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={st.label}>תאר בקצרה את העולם שהמצאת (אופציונלי)</label>
+            <textarea
+              value={customDesc}
+              onChange={e => setCustomDesc(e.target.value)}
+              placeholder="לדוגמה: עולם שבו גמדים עם כנפיים שולטים בארצות מעופפות ונלחמים בעורבים ענקיים..."
+              rows={3}
+              style={{ ...st.input, resize: "vertical", lineHeight: 1.6, fontSize: 12 }}
+            />
+          </div>
+
+          {/* Preview card */}
+          {customTopic && (
+            <div style={{ background: C.bg2, border: `2px solid ${C.indigo}44`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "#f0808018", border: `2px solid ${C.indigo}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>
+                {customIcon || "⭐"}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: C.text1 }}>{customTopic}</div>
+                {customDesc && <div style={{ fontSize: 11, color: C.text3, marginTop: 3, lineHeight: 1.4 }}>{customDesc}</div>}
+                <div style={{ fontSize: 10, color: C.indigoText, marginTop: 4, fontWeight: 600 }}>✓ נושא מומצא — ייושם על המשחק</div>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => setOpen(false)}
+            style={{ ...st.btnIndigo, justifyContent: "center", padding: "10px 0" }}
+            disabled={!customTopic}
+          >
+            {customTopic ? `✓ אשר נושא: ${customIcon || "⭐"} ${customTopic}` : "הכנס שם נושא כדי לאשר"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function GameCreatorApp({ onBack, onStartGame }) {
   const [gamesList, setGamesList] = useState([
@@ -466,6 +585,8 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
   const [gameFormat,       setGameFormat]       = useState("board");
   const [gameTopic,        setGameTopic]        = useState("fantasy");
   const [customTopic,      setCustomTopic]      = useState("");
+  const [customTopicIcon,  setCustomTopicIcon]  = useState("⭐");
+  const [customTopicDesc,  setCustomTopicDesc]  = useState("");
   const [boardDesign,      setBoardDesign]      = useState("pastel");
   const [aiPrompt,         setAiPrompt]         = useState("");
   const [gameTitle,        setGameTitle]        = useState("");
@@ -778,27 +899,16 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
                   );
                 })}
 
-                {/* Custom topic */}
-                <div style={{ marginTop: 4, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, marginBottom: 8 }}>✏️ נושא מותאם אישית</div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input
-                      value={customTopic}
-                      onChange={e => setCustomTopic(e.target.value)}
-                      placeholder="הקלד נושא חופשי — דינוזאורים, מינקראפט, כוכבי כדורגל..."
-                      style={{ ...st.input, flex: 1, fontSize: 13, borderColor: customTopic ? C.indigo : C.border }}
-                    />
-                    {customTopic && (
-                      <button onClick={() => setCustomTopic("")}
-                        style={{ ...st.btnGhost, padding: "10px 12px", fontSize: 13, flexShrink: 0 }}>✕</button>
-                    )}
-                  </div>
-                  {customTopic && (
-                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#f0808010", border: `1px solid ${C.indigo}44`, borderRadius: 8, fontSize: 12, color: C.indigoText }}>
-                      ✓ נושא נבחר: <strong>{customTopic}</strong>
-                    </div>
-                  )}
-                </div>
+                {/* Invent your own topic */}
+                <InventTopicPanel
+                  customTopic={customTopic}
+                  setCustomTopic={setCustomTopic}
+                  customIcon={customTopicIcon}
+                  setCustomIcon={setCustomTopicIcon}
+                  customDesc={customTopicDesc}
+                  setCustomDesc={setCustomTopicDesc}
+                  onClear={() => { setCustomTopic(""); setCustomTopicIcon("⭐"); setCustomTopicDesc(""); }}
+                />
               </div>
 
               {/* Section 3: board design */}
@@ -863,7 +973,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
             </div>
 
             {/* Live preview */}
-            <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+            <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} customTopicIcon={customTopicIcon} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
           </div>
         )}
 
@@ -980,7 +1090,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
             </div>
 
             {/* Right: live preview */}
-            <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+            <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} customTopicIcon={customTopicIcon} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
           </div>
         )}
 
@@ -1077,7 +1187,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
                 </div>
               </div>
 
-              <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+              <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} customTopicIcon={customTopicIcon} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
             </div>
           </div>
         )}
