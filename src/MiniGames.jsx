@@ -382,10 +382,11 @@ const WORD_MAP = {
   ניסוי:"science",מחשב:"science",מחשבים:"science",רובוט:"science",רובוטים:"science",
   גנטיקה:"science",מעבדה:"science",טכנולוגיה:"science",אנרגיה:"science",
   // ocean
-  אוקיינוס:"ocean",פיראט:"ocean",פיראטים:"ocean",שונית:"ocean",דולפין:"ocean",
-  דולפינים:"ocean",כריש:"ocean",כרישים:"ocean",תמנון:"ocean",תמנונים:"ocean",
-  אלמוג:"ocean",אלמוגים:"ocean",ספינה:"ocean",ספינות:"ocean",צוללת:"ocean",
-  גלים:"ocean",צלילה:"ocean",דיג:"ocean",מיצר:"ocean",
+  ים:"ocean",ימים:"ocean",אוקיינוס:"ocean",פיראט:"ocean",פיראטים:"ocean",שונית:"ocean",
+  דולפין:"ocean",דולפינים:"ocean",כריש:"ocean",כרישים:"ocean",תמנון:"ocean",תמנונים:"ocean",
+  אלמוג:"ocean",אלמוגים:"ocean",ספינה:"ocean",ספינות:"ocean",צוללת:"ocean",צוללות:"ocean",
+  גל:"ocean",גלים:"ocean",צלילה:"ocean",דיג:"ocean",מיצר:"ocean",לוויתן:"ocean",לווייתן:"ocean",
+  חוף:"ocean",חופים:"ocean",מפרץ:"ocean",שרצים:"ocean","תת-ימי":"ocean",
   // city
   עיר:"city",ערים:"city",מטרופולין:"city",בניין:"city",בניינים:"city",
   שכונה:"city",שכונות:"city",רחוב:"city",רחובות:"city",נדלן:"city",
@@ -425,29 +426,33 @@ const SUBSTR_KEYWORDS = {
   movies:   ["קולנוע","הוליו","אוסקר","סדרת","אנימצ"],
 };
 
+const _norm = s => s.replace(/['"״׳]/g, "").toLowerCase();
+const WORD_MAP_NORM = {};
+for (const [k, v] of Object.entries(WORD_MAP)) WORD_MAP_NORM[_norm(k)] = v;
+
 function mapCustomTopicToPreset(customTopicText) {
   if (!customTopicText) return "default";
   const text = customTopicText.trim();
 
-  // Level 1: split into words, check exact word map
-  const words = text.split(/[\s\-,،،]+/).map(w => w.toLowerCase().replace(/['"״׳]/g, ""));
+  // Level 1: split on whitespace/punctuation, check exact normalised word map
+  const words = text.split(/[\s\-,،،\/]+/).map(_norm);
   for (const word of words) {
-    if (WORD_MAP[word]) return WORD_MAP[word];
-    // strip common Hebrew prefixes (ב,ל,מ,ה,ו,ש,כ) and check again
-    const stripped = word.replace(/^(ב|ל|מ|ה|ו|ש|כ|של|את|על|עם|אל|לא)/, "");
-    if (stripped && WORD_MAP[stripped]) return WORD_MAP[stripped];
+    if (WORD_MAP_NORM[word]) return WORD_MAP_NORM[word];
+    // strip common Hebrew preposition prefixes then retry
+    const stripped = word.replace(/^(של|את|על|עם|אל|לא|ב|ל|מ|ה|ו|ש|כ)/, "");
+    if (stripped.length > 0 && stripped !== word && WORD_MAP_NORM[stripped]) return WORD_MAP_NORM[stripped];
   }
 
-  // Level 2: check phrase map (full text, phrases ≥ 3 chars)
-  const textLow = text.toLowerCase();
-  for (const [word, preset] of Object.entries(WORD_MAP)) {
-    if (word.length >= 3 && textLow.includes(word)) return preset;
+  // Level 2: substring of full text, only keys ≥ 3 chars (avoids "ים" inside "כלבים" etc.)
+  const textNorm = _norm(text);
+  for (const [key, preset] of Object.entries(WORD_MAP_NORM)) {
+    if (key.length >= 3 && textNorm.includes(key)) return preset;
   }
 
-  // Level 3: substring keywords (longer patterns, less false-positive)
+  // Level 3: scored long-substring match (≥ 4 chars, carefully chosen patterns)
   let best = "default", bestScore = 0;
   for (const [preset, kws] of Object.entries(SUBSTR_KEYWORDS)) {
-    const score = kws.filter(kw => textLow.includes(kw)).length;
+    const score = kws.filter(kw => textNorm.includes(_norm(kw))).length;
     if (score > bestScore) { bestScore = score; best = preset; }
   }
   return best;
