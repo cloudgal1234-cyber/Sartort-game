@@ -47,18 +47,18 @@ const GAME_FORMATS = [
 
 // ── Game topics ────────────────────────────────────────────────────────────────
 const TOPIC_PRESETS = [
-  { id: "fantasy", label: "פנטזיה",    icon: "🧙" },
-  { id: "space",   label: "חלל",       icon: "🚀" },
-  { id: "sports",  label: "ספורט",     icon: "⚽" },
-  { id: "animals", label: "בעלי חיים", icon: "🦁" },
-  { id: "history", label: "היסטוריה",  icon: "🏛️" },
-  { id: "science", label: "מדע",       icon: "🔬" },
-  { id: "ocean",   label: "ים",        icon: "🌊" },
-  { id: "city",    label: "עיר",       icon: "🏙️" },
-  { id: "nature",  label: "טבע",       icon: "🌿" },
-  { id: "music",   label: "מוזיקה",    icon: "🎵" },
-  { id: "food",    label: "אוכל",      icon: "🍕" },
-  { id: "movies",  label: "קולנוע",    icon: "🎬" },
+  { id: "fantasy", label: "פנטזיה",    icon: "🧙", desc: "קסם, דרקונים, גיבורים",      group: "הרפתקה" },
+  { id: "space",   label: "חלל",       icon: "🚀", desc: "כוכבים, חייזרים, גלקסיות",   group: "הרפתקה" },
+  { id: "ocean",   label: "ים",        icon: "🌊", desc: "פיראטים, אוצרות, עומקים",    group: "הרפתקה" },
+  { id: "history", label: "היסטוריה",  icon: "🏛️", desc: "עתיקות, מלחמות, תרבויות",   group: "ידע" },
+  { id: "science", label: "מדע",       icon: "🔬", desc: "פיזיקה, כימיה, טכנולוגיה",   group: "ידע" },
+  { id: "animals", label: "בעלי חיים", icon: "🦁", desc: "חיות בר, חיות מחמד, טבע",   group: "ידע" },
+  { id: "sports",  label: "ספורט",     icon: "⚽", desc: "כדורגל, ריצה, אולימפיאדה",  group: "אקשן" },
+  { id: "city",    label: "עיר",       icon: "🏙️", desc: "נדל\"ן, מסחר, בנייה",        group: "אקשן" },
+  { id: "nature",  label: "טבע",       icon: "🌿", desc: "יער, צמחים, אקולוגיה",       group: "אקשן" },
+  { id: "music",   label: "מוזיקה",    icon: "🎵", desc: "מנגינות, להקות, אמנים",      group: "תרבות" },
+  { id: "food",    label: "אוכל",      icon: "🍕", desc: "בישול, מטבח עולמי, שפים",    group: "תרבות" },
+  { id: "movies",  label: "קולנוע",    icon: "🎬", desc: "סרטים, טלוויזיה, שחקנים",   group: "תרבות" },
 ];
 
 // ── Board visual designs ────────────────────────────────────────────────────────
@@ -130,10 +130,12 @@ function CatFilter({ active, onChange }) {
 }
 
 // ── Live Preview ───────────────────────────────────────────────────────────────
-function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFile, boardDesign }) {
+function LivePreview({ format, topic, customTopic, gameTitle, themeColor, playerName, logoFile, boardDesign }) {
   const tc = themeColor || "#f08080";
   const pn = playerName || "שחקן 1";
   const topicObj = TOPIC_PRESETS.find(t => t.id === topic) || TOPIC_PRESETS[0];
+  const displayIcon = customTopic ? "✏️" : topicObj.icon;
+  const displayLabel = customTopic || topicObj.label;
   const design = BOARD_DESIGNS.find(d => d.id === boardDesign) || BOARD_DESIGNS[0];
   const isDark = boardDesign && boardDesign !== "pastel";
 
@@ -146,7 +148,7 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
             {design.icon} {design.label}
           </span>
           <span style={{ fontSize: 10, background: isDark ? design.cell : C.bg3, color: isDark ? design.text : C.text3, borderRadius: 4, padding: "2px 7px" }}>
-            {topicObj.icon} {topicObj.label}
+            {displayIcon} {displayLabel}
           </span>
         </div>
       </div>
@@ -159,7 +161,7 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
         {(!format || format === "board") && (
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4, marginBottom: 10 }}>
-              {["🏁 סוף", `${topicObj.icon} 3`, "✨ קלף", pn].map((t, i) => (
+              {["🏁 סוף", `${displayIcon} 3`, "✨ קלף", pn].map((t, i) => (
                 <div key={i} style={{ background: isDark ? design.bg : C.bg3, border: i === 3 ? `1px solid ${isDark ? design.accent : tc}88` : `1px solid ${isDark ? design.accent + "22" : C.border2}`, borderRadius: 6, padding: "6px 4px", textAlign: "center", fontSize: 9, color: i === 3 ? (isDark ? design.accent : tc) : (isDark ? design.text : C.text2), fontWeight: i === 3 ? 700 : "normal" }}>{t}</div>
               ))}
             </div>
@@ -170,7 +172,7 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
         {format === "trivia" && (
           <div>
             <div style={{ background: isDark ? design.bg : C.bg3, borderRadius: 8, padding: "10px 12px", textAlign: "center", marginBottom: 8 }}>
-              <p style={{ fontSize: 11, color: isDark ? design.text : C.text2, margin: "0 0 4px" }}>שאלה על {topicObj.label}: מה הוא...?</p>
+              <p style={{ fontSize: 11, color: isDark ? design.text : C.text2, margin: "0 0 4px" }}>שאלה על {displayLabel}: מה הוא...?</p>
               <span style={{ fontSize: 10, color: "#d97706" }}>⏳ זמן: 30 שניות</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
@@ -185,7 +187,7 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 5, marginBottom: 8 }}>
               {[...Array(8)].map((_, i) => (
-                <div key={i} style={{ aspectRatio: "1", background: i < 2 ? (isDark ? design.accent + "33" : "#b8edb844") : (isDark ? design.bg : `${tc}22`), border: `1px solid ${i < 2 ? (isDark ? design.accent + "88" : "#4a9a4a44") : (isDark ? design.accent + "22" : C.border2)}`, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{i < 2 ? topicObj.icon : "?"}</div>
+                <div key={i} style={{ aspectRatio: "1", background: i < 2 ? (isDark ? design.accent + "33" : "#b8edb844") : (isDark ? design.bg : `${tc}22`), border: `1px solid ${i < 2 ? (isDark ? design.accent + "88" : "#4a9a4a44") : (isDark ? design.accent + "22" : C.border2)}`, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{i < 2 ? displayIcon : "?"}</div>
               ))}
             </div>
             <div style={{ fontSize: 10, color: isDark ? design.text : C.text3, textAlign: "center" }}>1/8 זוגות • {pn}</div>
@@ -208,7 +210,7 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
         {format === "escape" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 26, marginBottom: 6 }}>🔐</div>
-            <p style={{ fontSize: 11, color: isDark ? design.text : C.text2, marginBottom: 10, marginTop: 0 }}>חידה {topicObj.icon}: "אני גבוה בצעירותי..."</p>
+            <p style={{ fontSize: 11, color: isDark ? design.text : C.text2, marginBottom: 10, marginTop: 0 }}>חידה {displayIcon}: "אני גבוה בצעירותי..."</p>
             <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
               <div style={{ flex: 1, background: isDark ? design.bg : C.bg0, border: `1px solid ${isDark ? design.accent + "44" : C.border}`, borderRadius: 8, padding: "8px", fontSize: 11, color: isDark ? design.text : C.text3 }}>הקלד תשובה...</div>
               <div style={{ background: isDark ? design.accent : tc, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#fff", fontWeight: 700 }}>✓</div>
@@ -220,12 +222,12 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
           <div style={{ textAlign: "center", padding: "20px 0" }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>🎮</div>
             <div style={{ fontSize: 13, color: isDark ? design.text : C.text3, fontWeight: 600 }}>בקרוב...</div>
-            <div style={{ fontSize: 11, color: isDark ? design.accent : C.text3, marginTop: 4 }}>וידאו גיים {topicObj.icon} {topicObj.label}</div>
+            <div style={{ fontSize: 11, color: isDark ? design.accent : C.text3, marginTop: 4 }}>וידאו גיים {displayIcon} {displayLabel}</div>
           </div>
         )}
 
         <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${isDark ? design.accent + "22" : C.border}` }}>
-          <pre style={{ fontSize: 8, color: isDark ? design.accent + "aa" : "#888", fontFamily: "monospace", background: isDark ? design.bg : C.bg0, borderRadius: 6, padding: "6px 8px", margin: 0, overflow: "auto" }}>{`{"format":"${format||"board"}","topic":"${topic||"fantasy"}","design":"${boardDesign||"pastel"}"}`}</pre>
+          <pre style={{ fontSize: 8, color: isDark ? design.accent + "aa" : "#888", fontFamily: "monospace", background: isDark ? design.bg : C.bg0, borderRadius: 6, padding: "6px 8px", margin: 0, overflow: "auto" }}>{`{"format":"${format||"board"}","topic":"${customTopic || topic||"fantasy"}","design":"${boardDesign||"pastel"}"}`}</pre>
         </div>
       </div>
     </div>
@@ -463,6 +465,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [gameFormat,       setGameFormat]       = useState("board");
   const [gameTopic,        setGameTopic]        = useState("fantasy");
+  const [customTopic,      setCustomTopic]      = useState("");
   const [boardDesign,      setBoardDesign]      = useState("pastel");
   const [aiPrompt,         setAiPrompt]         = useState("");
   const [gameTitle,        setGameTitle]        = useState("");
@@ -563,7 +566,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
   function handleSave() {
     if (!gameTitle.trim()) { showToast("אנא הכנס שם למשחק"); return; }
     setGamesList(prev => [
-      { id: Date.now().toString(), title: gameTitle, template: selectedTemplate?.id || "race", format: gameFormat, topic: gameTopic, author: "אתה" },
+      { id: Date.now().toString(), title: gameTitle, template: selectedTemplate?.id || "race", format: gameFormat, topic: customTopic || gameTopic, author: "אתה" },
       ...prev,
     ]);
     showToast("✓ המשחק נשמר ושותף לקהילה!");
@@ -745,17 +748,56 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
               {/* Section 2: topic */}
               <div style={st.card}>
                 <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 4 }}>נושא המשחק</div>
-                <div style={{ fontSize: 12, color: C.text3, marginBottom: 14 }}>על מה המשחק — ישפיע על האיקונים, הצבעים והתוכן</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {TOPIC_PRESETS.map(t => (
-                    <button key={t.id} onClick={() => setGameTopic(t.id)}
-                      style={{
-                        padding: "7px 13px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        border: `2px solid ${gameTopic === t.id ? C.indigo : C.border}`,
-                        background: gameTopic === t.id ? "#f0808018" : C.bg0,
-                        color: gameTopic === t.id ? C.indigoText : C.text2, transition: "all .15s",
-                      }}>{t.icon} {t.label}</button>
-                  ))}
+                <div style={{ fontSize: 12, color: C.text3, marginBottom: 16 }}>על מה המשחק — ישפיע על איקונים, צבעים ותוכן הגיים</div>
+
+                {/* Group tabs */}
+                {["הרפתקה", "ידע", "אקשן", "תרבות"].map(group => {
+                  const groupTopics = TOPIC_PRESETS.filter(t => t.group === group);
+                  return (
+                    <div key={group} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>{group}</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+                        {groupTopics.map(t => {
+                          const active = gameTopic === t.id && !customTopic;
+                          return (
+                            <button key={t.id} onClick={() => { setGameTopic(t.id); setCustomTopic(""); }}
+                              style={{
+                                background: active ? "#f0808018" : C.bg0,
+                                border: `2px solid ${active ? C.indigo : C.border}`,
+                                borderRadius: 12, padding: "10px 8px", cursor: "pointer", textAlign: "center",
+                                transition: "all .15s", boxShadow: active ? `0 0 0 2px ${C.indigo}33` : "none",
+                              }}>
+                              <div style={{ fontSize: 20, marginBottom: 3 }}>{t.icon}</div>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: active ? C.indigoText : C.text1 }}>{t.label}</div>
+                              <div style={{ fontSize: 9, color: C.text3, marginTop: 2, lineHeight: 1.3 }}>{t.desc}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Custom topic */}
+                <div style={{ marginTop: 4, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, marginBottom: 8 }}>✏️ נושא מותאם אישית</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      value={customTopic}
+                      onChange={e => setCustomTopic(e.target.value)}
+                      placeholder="הקלד נושא חופשי — דינוזאורים, מינקראפט, כוכבי כדורגל..."
+                      style={{ ...st.input, flex: 1, fontSize: 13, borderColor: customTopic ? C.indigo : C.border }}
+                    />
+                    {customTopic && (
+                      <button onClick={() => setCustomTopic("")}
+                        style={{ ...st.btnGhost, padding: "10px 12px", fontSize: 13, flexShrink: 0 }}>✕</button>
+                    )}
+                  </div>
+                  {customTopic && (
+                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#f0808010", border: `1px solid ${C.indigo}44`, borderRadius: 8, fontSize: 12, color: C.indigoText }}>
+                      ✓ נושא נבחר: <strong>{customTopic}</strong>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -821,7 +863,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
             </div>
 
             {/* Live preview */}
-            <LivePreview format={gameFormat} topic={gameTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+            <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
           </div>
         )}
 
@@ -938,7 +980,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
             </div>
 
             {/* Right: live preview */}
-            <LivePreview format={gameFormat} topic={gameTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+            <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
           </div>
         )}
 
@@ -1035,7 +1077,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
                 </div>
               </div>
 
-              <LivePreview format={gameFormat} topic={gameTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+              <LivePreview format={gameFormat} topic={gameTopic} customTopic={customTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
             </div>
           </div>
         )}
