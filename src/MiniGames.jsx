@@ -346,17 +346,53 @@ const MEMORY_EMOJIS = {
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function getQuestions(topic) {
-  return TRIVIA_BY_TOPIC[topic] || TRIVIA_BY_TOPIC.default;
+// ── Keyword → preset mapping for custom/invented topics ───────────────────────
+const TOPIC_KEYWORDS = {
+  fantasy:  ["פנטז","קסם","דרקון","אביר","טירה","מכשפ","גמד","אלף","חרב","שרביט","מלוכ","ממלכ","קוסם","יצור","מפלצ","ענק","פיה","גיבור","לוחם","חיה מיתול"],
+  space:    ["חלל","כוכב","גלקסי","גלאקט","חייזר","רקטה","אסטרונ","ירח","שמש","מאדים","לוויין","מסלול","אסטר","קוסמ","פלנט","לוויתן חלל","ufo","נאס"],
+  sports:   ["ספורט","כדורגל","כדורסל","ריצ","שחיי","אולימפ","אצלת","ספורטאי","כדור","אלופ","מירוץ","שחיה","גולף","טניס","היאבקות"],
+  animals:  ["חיה","חיות","בעל חיים","בעלי","כלב","חתול","אריה","פיל","ג'ירפ","עוף","ציפור","דג","זוחל","חרק","יונק","דוב","זאב","נמר","קוף","קוביה"],
+  history:  ["היסטור","עתיק","מלחמ","ביניים","פרעה","רומ","יוון","קיסר","מהפכ","פרעו","ממלכ","עמ","תרבות","ארכיאולוג","עת העתיק"],
+  science:  ["מדע","פיזיק","כימי","ניסוי","מעבד","מדענ","טכנולוג","רובוט","בינה מלאכותית","ai","מחשב","ביולוג","גנטי","חלקיק"],
+  ocean:    ["ים","אוקיינ","פיראט","שונית","דולפין","כריש","תמנ","אלמוג","גל","מים","צלילה","ספינה","צוללת","חוף","דיג"],
+  city:     ["עיר","עיירה","מטרופולין","בניין","רחוב","שכונ","מונופול","נדלן","נכס","מסחר","פארק","גן","ארכיטקטור","תשתית"],
+  nature:   ["טבע","יער","עץ","עצ","צמח","הר","מדבר","גשם","שלג","מזג","ג'ונגל","ביצה","מרעה","כפר","ירוק","אקולוג"],
+  music:    ["מוזיק","שיר","להקה","זמר","גיטר","פסנתר","ריתמ","ביט","מנגינ","תזמורת","מקצב","סולן","אלבום","קונצרט"],
+  food:     ["אוכל","מזון","בישול","מטבח","שף","מסעדה","ארוחה","גבינה","לחם","עוגה","ירק","פרי","בשר","מתכון","תבשיל"],
+  movies:   ["סרט","קולנוע","שחקן","שחקנ","במאי","הוליווד","פרס","אוסקר","סדרה","טלוויז","קריקטור","אנימ","עלילה","דרמה"],
+};
+
+function mapCustomTopicToPreset(customTopicText) {
+  if (!customTopicText) return "default";
+  const text = customTopicText.toLowerCase();
+  let best = "default", bestScore = 0;
+  for (const [preset, kws] of Object.entries(TOPIC_KEYWORDS)) {
+    const score = kws.filter(kw => text.includes(kw)).length;
+    if (score > bestScore) { bestScore = score; best = preset; }
+  }
+  return best;
 }
-function getRiddles(topic) {
-  return ESCAPE_BY_TOPIC[topic] || ESCAPE_BY_TOPIC.default;
+
+function resolveTopic(topic, customTopic) {
+  if (customTopic) return mapCustomTopicToPreset(customTopic);
+  return topic || "default";
 }
-function getPartyPrompts(topic) {
-  return PARTY_BY_TOPIC[topic] || PARTY_BY_TOPIC.default;
+
+function getQuestions(topic, customTopic) {
+  const resolved = resolveTopic(topic, customTopic);
+  return TRIVIA_BY_TOPIC[resolved] || TRIVIA_BY_TOPIC.default;
 }
-function getMemoryEmojis(topic) {
-  return MEMORY_EMOJIS[topic] || MEMORY_EMOJIS.default;
+function getRiddles(topic, customTopic) {
+  const resolved = resolveTopic(topic, customTopic);
+  return ESCAPE_BY_TOPIC[resolved] || ESCAPE_BY_TOPIC.default;
+}
+function getPartyPrompts(topic, customTopic) {
+  const resolved = resolveTopic(topic, customTopic);
+  return PARTY_BY_TOPIC[resolved] || PARTY_BY_TOPIC.default;
+}
+function getMemoryEmojis(topic, customTopic) {
+  const resolved = resolveTopic(topic, customTopic);
+  return MEMORY_EMOJIS[resolved] || MEMORY_EMOJIS.default;
 }
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
@@ -371,7 +407,23 @@ function BackBtn({ onBack }) {
 
 function TopicBadge({ topic, customTopic }) {
   const TOPIC_LABELS = { fantasy:"🧙 פנטזיה", space:"🚀 חלל", sports:"⚽ ספורט", animals:"🦁 בעלי חיים", history:"🏛️ היסטוריה", science:"🔬 מדע", ocean:"🌊 ים", city:"🏙️ עיר", nature:"🌿 טבע", music:"🎵 מוזיקה", food:"🍕 אוכל", movies:"🎬 קולנוע" };
-  const label = customTopic ? `✏️ ${customTopic}` : (TOPIC_LABELS[topic] || "✨ כללי");
+  if (customTopic) {
+    const resolved = mapCustomTopicToPreset(customTopic);
+    const resolvedLabel = TOPIC_LABELS[resolved];
+    return (
+      <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
+        <span style={{ display:"inline-block", background:"#f0808018", border:"1px solid #f0808033", borderRadius:20, padding:"3px 12px", fontSize:11, fontWeight:700, color:"#c06060" }}>
+          ✏️ {customTopic}
+        </span>
+        {resolvedLabel && (
+          <span style={{ display:"inline-block", background:"#e0f0ff", border:"1px solid #b0d8f0", borderRadius:20, padding:"3px 12px", fontSize:10, color:"#4080a0" }}>
+            תוכן לפי: {resolvedLabel}
+          </span>
+        )}
+      </div>
+    );
+  }
+  const label = TOPIC_LABELS[topic] || "✨ כללי";
   return (
     <span style={{ display:"inline-block", background:"#f0808018", border:"1px solid #f0808033", borderRadius:20, padding:"3px 12px", fontSize:11, fontWeight:700, color:"#c06060", marginBottom:10 }}>
       נושא: {label}
@@ -381,7 +433,7 @@ function TopicBadge({ topic, customTopic }) {
 
 // ── Trivia Game ───────────────────────────────────────────────────────────────
 export function TriviaGame({ name, topic, customTopic, players, onBack }) {
-  const questions = getQuestions(topic);
+  const questions = getQuestions(topic, customTopic);
   const [qi, setQi]         = useState(0);
   const [selected, setSelected] = useState(null);
   const [scores, setScores] = useState(players.map(() => 0));
@@ -484,7 +536,7 @@ function shuffled(emojis) {
 }
 
 export function MemoryGame({ topic, customTopic, name, onBack }) {
-  const emojis = getMemoryEmojis(topic);
+  const emojis = getMemoryEmojis(topic, customTopic);
   const [cards, setCards] = useState(() => shuffled(emojis));
   const [open, setOpen]   = useState([]);
   const [moves, setMoves] = useState(0);
@@ -559,7 +611,7 @@ export function MemoryGame({ topic, customTopic, name, onBack }) {
 
 // ── Party Game (Truth or Dare) ────────────────────────────────────────────────
 export function PartyGame({ name, topic, customTopic, players, onBack }) {
-  const prompts = getPartyPrompts(topic);
+  const prompts = getPartyPrompts(topic, customTopic);
   const [cp, setCp]       = useState(0);
   const [choice, setChoice] = useState(null);
   const [round, setRound] = useState(0);
@@ -623,7 +675,7 @@ export function PartyGame({ name, topic, customTopic, players, onBack }) {
 
 // ── Escape Room ───────────────────────────────────────────────────────────────
 export function EscapeGame({ name, topic, customTopic, onBack }) {
-  const riddles = getRiddles(topic);
+  const riddles = getRiddles(topic, customTopic);
   const [step, setStep]     = useState(0);
   const [answer, setAnswer] = useState("");
   const [error, setError]   = useState(false);
