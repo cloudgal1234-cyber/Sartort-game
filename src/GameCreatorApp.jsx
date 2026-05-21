@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // ── Categories ─────────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -11,7 +11,7 @@ const CATEGORIES = [
   { id: "sports",    label: "ספורט ופעילות",  icon: "⚽" },
 ];
 
-// ── Templates (inspirations only) ─────────────────────────────────────────────
+// ── Templates ──────────────────────────────────────────────────────────────────
 const GAME_TEMPLATES = [
   { id: "race",        category: "board",     icon: "🏁", color: "#2563eb", title: "מסלול (Race Game)",           description: "כולם רצים לסוף המסלול עם קוביה ומשבצות אירוע.",        example: "מריו קארט קופסה, Candy Land",   format: "board",  topic: "city"    },
   { id: "monopoly",    category: "board",     icon: "💰", color: "#059669", title: "רכוש ומסחר (Monopoly)",      description: "בניית אימפריה כלכלית, לוח נכסים וקלפי הפתעה.",           example: 'מונופול, עיר הנדל"ן',            format: "board",  topic: "city"    },
@@ -35,7 +35,7 @@ const GAME_TEMPLATES = [
   { id: "dexterity",   category: "sports",    icon: "🎯", color: "#e11d48", title: "זריזות ידיים (Dexterity)",   description: "פעולות מהירות ומדויקות — מהירות ידיים כנגד הזמן.",      example: "Jenga, Twister, Bop It",         format: "party",  topic: "sports"  },
 ];
 
-// ── Game formats (HOW to play) ─────────────────────────────────────────────────
+// ── Game formats ───────────────────────────────────────────────────────────────
 const GAME_FORMATS = [
   { id: "board",   icon: "🎲", label: "לוח משחק",    desc: "מסלול, אסטרטגיה, נכסים" },
   { id: "trivia",  icon: "❓", label: "טריוויה",      desc: "שאלות ותשובות, ידע" },
@@ -45,7 +45,7 @@ const GAME_FORMATS = [
   { id: "digital", icon: "🎮", label: "וידאו גיים",   desc: "בקרוב..." },
 ];
 
-// ── Game topics (WHAT the game is about) ──────────────────────────────────────
+// ── Game topics ────────────────────────────────────────────────────────────────
 const TOPIC_PRESETS = [
   { id: "fantasy", label: "פנטזיה",    icon: "🧙" },
   { id: "space",   label: "חלל",       icon: "🚀" },
@@ -61,7 +61,17 @@ const TOPIC_PRESETS = [
   { id: "movies",  label: "קולנוע",    icon: "🎬" },
 ];
 
-// ── Theme mapping (board game → Sartort theme) ─────────────────────────────────
+// ── Board visual designs ────────────────────────────────────────────────────────
+const BOARD_DESIGNS = [
+  { id: "pastel",  label: "פסטל",     icon: "🌸", bg: "#fff5f8", accent: "#f08080", cell: "#fce8f2", text: "#2d1520" },
+  { id: "space",   label: "חלל",      icon: "🌌", bg: "#0d0d2a", accent: "#6464ff", cell: "#1a1a40", text: "#e0e0ff" },
+  { id: "forest",  label: "יער",      icon: "🌲", bg: "#0a1e0a", accent: "#34d399", cell: "#142a14", text: "#d0f8d0" },
+  { id: "ocean",   label: "ים",       icon: "🌊", bg: "#061525", accent: "#38bdf8", cell: "#0d2035", text: "#c0e8ff" },
+  { id: "lava",    label: "לבה",      icon: "🌋", bg: "#1a0500", accent: "#f97316", cell: "#2d0a00", text: "#ffe0c0" },
+  { id: "neon",    label: "ניאון",    icon: "⚡", bg: "#050510", accent: "#a855f7", cell: "#100520", text: "#e8d0ff" },
+];
+
+// ── Theme mappings ─────────────────────────────────────────────────────────────
 const TOPIC_TO_SARTORT = {
   fantasy: "medieval", city: "medieval", history: "medieval",
   ocean: "ocean", sports: "ocean", food: "ocean",
@@ -69,8 +79,7 @@ const TOPIC_TO_SARTORT = {
   animals: "dragons", movies: "dragons", music: "dragons",
 };
 const FORMAT_TO_SARTORT = {
-  board: null, // use topic mapping
-  trivia: "space", memory: "space", party: "medieval",
+  board: null, trivia: "space", memory: "space", party: "medieval",
   escape: "volcano", digital: "dragons",
 };
 
@@ -96,9 +105,10 @@ const st = {
 function TabBtn({ active, onClick, children }) {
   return (
     <button onClick={onClick} style={{
-      padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+      padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
       border: "none", borderBottom: active ? `2px solid ${C.indigo}` : "2px solid transparent",
       background: active ? C.bg3 : "transparent", color: active ? C.indigoText : C.text2, transition: "all .15s",
+      whiteSpace: "nowrap",
     }}>{children}</button>
   );
 }
@@ -119,22 +129,30 @@ function CatFilter({ active, onChange }) {
   );
 }
 
-// ── Live Preview (format-based) ────────────────────────────────────────────────
-function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFile }) {
+// ── Live Preview ───────────────────────────────────────────────────────────────
+function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFile, boardDesign }) {
   const tc = themeColor || "#f08080";
   const pn = playerName || "שחקן 1";
   const topicObj = TOPIC_PRESETS.find(t => t.id === topic) || TOPIC_PRESETS[0];
+  const design = BOARD_DESIGNS.find(d => d.id === boardDesign) || BOARD_DESIGNS[0];
+  const isDark = boardDesign && boardDesign !== "pastel";
+
   return (
-    <div style={{ background: C.bg0, border: `1px solid ${tc}44`, borderRadius: 14, padding: 16, position: "sticky", top: 76 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
-        <span style={{ fontSize: 10, color: C.text3, fontWeight: 700, letterSpacing: 1 }}>LIVE PREVIEW</span>
-        <span style={{ fontSize: 10, background: C.bg3, color: C.text3, borderRadius: 4, padding: "2px 7px" }}>
-          {topicObj.icon} {topicObj.label}
-        </span>
+    <div style={{ background: isDark ? design.bg : C.bg0, border: `1px solid ${isDark ? design.accent + "55" : tc + "44"}`, borderRadius: 14, padding: 16, position: "sticky", top: 76, transition: "all .3s" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingBottom: 10, borderBottom: `1px solid ${isDark ? design.accent + "33" : C.border}` }}>
+        <span style={{ fontSize: 10, color: isDark ? design.accent : C.text3, fontWeight: 700, letterSpacing: 1 }}>LIVE PREVIEW</span>
+        <div style={{ display: "flex", gap: 5 }}>
+          <span style={{ fontSize: 10, background: isDark ? design.cell : C.bg3, color: isDark ? design.text : C.text3, borderRadius: 4, padding: "2px 7px" }}>
+            {design.icon} {design.label}
+          </span>
+          <span style={{ fontSize: 10, background: isDark ? design.cell : C.bg3, color: isDark ? design.text : C.text3, borderRadius: 4, padding: "2px 7px" }}>
+            {topicObj.icon} {topicObj.label}
+          </span>
+        </div>
       </div>
-      <div style={{ padding: 12, borderRadius: 10, background: C.bg2, border: `1px solid ${tc}33` }}>
+      <div style={{ padding: 12, borderRadius: 10, background: isDark ? design.cell : C.bg2, border: `1px solid ${isDark ? design.accent + "33" : tc + "33"}`, transition: "all .3s" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <span style={{ fontWeight: 700, fontSize: 14, color: tc }}>{gameTitle || "ללא שם"}</span>
+          <span style={{ fontWeight: 700, fontSize: 14, color: isDark ? design.accent : tc }}>{gameTitle || "ללא שם"}</span>
           {logoFile && <img src={logoFile} alt="" style={{ width: 22, height: 22, borderRadius: 4, objectFit: "cover" }} />}
         </div>
 
@@ -142,22 +160,22 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4, marginBottom: 10 }}>
               {["🏁 סוף", `${topicObj.icon} 3`, "✨ קלף", pn].map((t, i) => (
-                <div key={i} style={{ background: C.bg3, border: i === 0 ? "1px solid #34d39944" : `1px solid ${C.border2}`, borderRadius: 6, padding: "6px 4px", textAlign: "center", fontSize: 9, color: i === 3 ? tc : C.text2, fontWeight: i === 3 ? 700 : "normal" }}>{t}</div>
+                <div key={i} style={{ background: isDark ? design.bg : C.bg3, border: i === 3 ? `1px solid ${isDark ? design.accent : tc}88` : `1px solid ${isDark ? design.accent + "22" : C.border2}`, borderRadius: 6, padding: "6px 4px", textAlign: "center", fontSize: 9, color: i === 3 ? (isDark ? design.accent : tc) : (isDark ? design.text : C.text2), fontWeight: i === 3 ? 700 : "normal" }}>{t}</div>
               ))}
             </div>
-            <div style={{ background: tc, borderRadius: 8, padding: "8px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>🎲 הטל קוביה</div>
+            <div style={{ background: isDark ? design.accent : tc, borderRadius: 8, padding: "8px 0", textAlign: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>🎲 הטל קוביה</div>
           </div>
         )}
 
         {format === "trivia" && (
           <div>
-            <div style={{ background: C.bg3, borderRadius: 8, padding: "10px 12px", textAlign: "center", marginBottom: 8 }}>
-              <p style={{ fontSize: 11, color: C.text2, margin: "0 0 4px" }}>שאלה על {topicObj.label}: מה הוא...?</p>
+            <div style={{ background: isDark ? design.bg : C.bg3, borderRadius: 8, padding: "10px 12px", textAlign: "center", marginBottom: 8 }}>
+              <p style={{ fontSize: 11, color: isDark ? design.text : C.text2, margin: "0 0 4px" }}>שאלה על {topicObj.label}: מה הוא...?</p>
               <span style={{ fontSize: 10, color: "#d97706" }}>⏳ זמן: 30 שניות</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
               {["א.", "ב.", "ג.", "ד."].map(a => (
-                <div key={a} style={{ background: C.bg3, border: `1px solid ${C.border2}`, borderRadius: 6, padding: "6px 8px", fontSize: 10, color: C.text2 }}>{a}</div>
+                <div key={a} style={{ background: isDark ? design.bg : C.bg3, border: `1px solid ${isDark ? design.accent + "33" : C.border2}`, borderRadius: 6, padding: "6px 8px", fontSize: 10, color: isDark ? design.text : C.text2 }}>{a}</div>
               ))}
             </div>
           </div>
@@ -167,22 +185,22 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 5, marginBottom: 8 }}>
               {[...Array(8)].map((_, i) => (
-                <div key={i} style={{ aspectRatio: "1", background: i < 2 ? "#b8edb844" : `${tc}22`, border: `1px solid ${i < 2 ? "#4a9a4a44" : C.border2}`, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{i < 2 ? topicObj.icon : "?"}</div>
+                <div key={i} style={{ aspectRatio: "1", background: i < 2 ? (isDark ? design.accent + "33" : "#b8edb844") : (isDark ? design.bg : `${tc}22`), border: `1px solid ${i < 2 ? (isDark ? design.accent + "88" : "#4a9a4a44") : (isDark ? design.accent + "22" : C.border2)}`, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{i < 2 ? topicObj.icon : "?"}</div>
               ))}
             </div>
-            <div style={{ fontSize: 10, color: C.text3, textAlign: "center" }}>1/8 זוגות • {pn}</div>
+            <div style={{ fontSize: 10, color: isDark ? design.text : C.text3, textAlign: "center" }}>1/8 זוגות • {pn}</div>
           </div>
         )}
 
         {format === "party" && (
           <div>
-            <div style={{ background: "#e8f4ff", border: "2px solid #4daaff33", borderRadius: 12, padding: "14px", textAlign: "center", marginBottom: 8 }}>
-              <div style={{ fontSize: 11, color: "#6090b0", marginBottom: 6 }}>💬 אמת — {pn}</div>
-              <div style={{ fontSize: 12, color: "#2d1520" }}>מה הדבר הכי מביך שקרה לך?</div>
+            <div style={{ background: isDark ? design.bg : "#e8f4ff", border: `2px solid ${isDark ? design.accent + "44" : "#4daaff33"}`, borderRadius: 12, padding: "14px", textAlign: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: isDark ? design.accent : "#6090b0", marginBottom: 6 }}>💬 אמת — {pn}</div>
+              <div style={{ fontSize: 12, color: isDark ? design.text : "#2d1520" }}>מה הדבר הכי מביך שקרה לך?</div>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
-              <div style={{ flex: 1, background: "#e8f4ff", borderRadius: 8, padding: "7px 0", textAlign: "center", fontSize: 11, color: "#2060a0", fontWeight: 700 }}>💬 אמת</div>
-              <div style={{ flex: 1, background: "#fff0e8", borderRadius: 8, padding: "7px 0", textAlign: "center", fontSize: 11, color: "#c04820", fontWeight: 700 }}>🔥 חובה</div>
+              <div style={{ flex: 1, background: isDark ? design.cell : "#e8f4ff", borderRadius: 8, padding: "7px 0", textAlign: "center", fontSize: 11, color: isDark ? design.accent : "#2060a0", fontWeight: 700 }}>💬 אמת</div>
+              <div style={{ flex: 1, background: isDark ? design.cell : "#fff0e8", borderRadius: 8, padding: "7px 0", textAlign: "center", fontSize: 11, color: isDark ? design.text : "#c04820", fontWeight: 700 }}>🔥 חובה</div>
             </div>
           </div>
         )}
@@ -190,10 +208,10 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
         {format === "escape" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 26, marginBottom: 6 }}>🔐</div>
-            <p style={{ fontSize: 11, color: C.text2, marginBottom: 10, marginTop: 0 }}>חידה {topicObj.icon}: "אני גבוה בצעירותי..."</p>
+            <p style={{ fontSize: 11, color: isDark ? design.text : C.text2, marginBottom: 10, marginTop: 0 }}>חידה {topicObj.icon}: "אני גבוה בצעירותי..."</p>
             <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-              <div style={{ flex: 1, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px", fontSize: 11, color: C.text3 }}>הקלד תשובה...</div>
-              <div style={{ background: tc, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#fff", fontWeight: 700 }}>✓</div>
+              <div style={{ flex: 1, background: isDark ? design.bg : C.bg0, border: `1px solid ${isDark ? design.accent + "44" : C.border}`, borderRadius: 8, padding: "8px", fontSize: 11, color: isDark ? design.text : C.text3 }}>הקלד תשובה...</div>
+              <div style={{ background: isDark ? design.accent : tc, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#fff", fontWeight: 700 }}>✓</div>
             </div>
           </div>
         )}
@@ -201,13 +219,13 @@ function LivePreview({ format, topic, gameTitle, themeColor, playerName, logoFil
         {format === "digital" && (
           <div style={{ textAlign: "center", padding: "20px 0" }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>🎮</div>
-            <div style={{ fontSize: 13, color: C.text3, fontWeight: 600 }}>בקרוב...</div>
-            <div style={{ fontSize: 11, color: C.text3, marginTop: 4 }}>וידאו גיים {topicObj.icon} {topicObj.label}</div>
+            <div style={{ fontSize: 13, color: isDark ? design.text : C.text3, fontWeight: 600 }}>בקרוב...</div>
+            <div style={{ fontSize: 11, color: isDark ? design.accent : C.text3, marginTop: 4 }}>וידאו גיים {topicObj.icon} {topicObj.label}</div>
           </div>
         )}
 
-        <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
-          <pre style={{ fontSize: 8, color: "#888", fontFamily: "monospace", background: C.bg0, borderRadius: 6, padding: "6px 8px", margin: 0, overflow: "auto" }}>{`{"format":"${format||"board"}","topic":"${topic||"fantasy"}","title":"${(gameTitle||"").replace(/"/g,"'")}"}`}</pre>
+        <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${isDark ? design.accent + "22" : C.border}` }}>
+          <pre style={{ fontSize: 8, color: isDark ? design.accent + "aa" : "#888", fontFamily: "monospace", background: isDark ? design.bg : C.bg0, borderRadius: 6, padding: "6px 8px", margin: 0, overflow: "auto" }}>{`{"format":"${format||"board"}","topic":"${topic||"fantasy"}","design":"${boardDesign||"pastel"}"}`}</pre>
         </div>
       </div>
     </div>
@@ -258,6 +276,178 @@ function Toast({ msg }) {
   );
 }
 
+// ── AI Simulation logic ────────────────────────────────────────────────────────
+function runSimulation(format, topic, playerCount = 3) {
+  const GAMES = 100;
+  const wins = Array(playerCount).fill(0);
+  const turnCounts = [];
+
+  if (format === "board") {
+    for (let g = 0; g < GAMES; g++) {
+      const positions = Array(playerCount).fill(0);
+      let turns = 0;
+      let winner = -1;
+      while (winner === -1 && turns < 400) {
+        for (let p = 0; p < playerCount && winner === -1; p++) {
+          const roll = Math.ceil(Math.random() * 6);
+          positions[p] = Math.min(positions[p] + roll, 30);
+          if (positions[p] >= 30) winner = p;
+        }
+        turns++;
+      }
+      if (winner === -1) winner = positions.indexOf(Math.max(...positions));
+      wins[winner]++;
+      turnCounts.push(turns);
+    }
+  } else if (format === "trivia") {
+    for (let g = 0; g < GAMES; g++) {
+      const scores = Array(playerCount).fill(0).map(() => 0);
+      for (let q = 0; q < 10; q++) {
+        for (let p = 0; p < playerCount; p++) {
+          if (Math.random() < 0.55) scores[p]++;
+        }
+      }
+      const maxScore = Math.max(...scores);
+      const winner = scores.indexOf(maxScore);
+      wins[winner]++;
+      turnCounts.push(10);
+    }
+  } else if (format === "memory") {
+    for (let g = 0; g < GAMES; g++) {
+      const scores = Array(playerCount).fill(0).map(() => Math.floor(Math.random() * 8));
+      const winner = scores.indexOf(Math.max(...scores));
+      wins[winner]++;
+      turnCounts.push(Math.floor(Math.random() * 20) + 16);
+    }
+  } else if (format === "party") {
+    for (let g = 0; g < GAMES; g++) {
+      const winner = Math.floor(Math.random() * playerCount);
+      wins[winner]++;
+      turnCounts.push(Math.floor(Math.random() * 10) + 5);
+    }
+  } else if (format === "escape") {
+    for (let g = 0; g < GAMES; g++) {
+      const winner = 0;
+      wins[winner]++;
+      turnCounts.push(Math.floor(Math.random() * 15) + 10);
+    }
+  } else {
+    for (let g = 0; g < GAMES; g++) {
+      const winner = Math.floor(Math.random() * playerCount);
+      wins[winner]++;
+      turnCounts.push(Math.floor(Math.random() * 8) + 3);
+    }
+  }
+
+  const avgTurns = Math.round(turnCounts.reduce((a, b) => a + b, 0) / GAMES);
+  const maxWins = Math.max(...wins);
+  const dominance = (maxWins / GAMES) * 100;
+  const balanced = dominance < 45;
+
+  return { wins, avgTurns, dominance: Math.round(dominance), balanced, playerCount };
+}
+
+function analyzeGame(format, topic, gameTitle, boardDesign, simData) {
+  const issues = [];
+  const suggestions = [];
+  let score = 100;
+
+  if (!gameTitle || gameTitle.length < 3) {
+    issues.push({ type: "warn", text: "שם המשחק קצר מדי — שם טוב מושך שחקנים" });
+    score -= 8;
+  }
+  if (format === "board" && boardDesign === "pastel") {
+    suggestions.push("נסה עיצוב 'חלל' או 'ים' — הם נראים מרשימים יותר ללוח");
+  }
+  if (format === "digital") {
+    issues.push({ type: "info", text: "וידאו גיים בקרוב — בינתיים יופעל כמשחק לוח" });
+    score -= 5;
+  }
+  if (format === "trivia" && topic === "city") {
+    suggestions.push("טריוויה על עיר יכולה להיות צרה מדי — שקול 'היסטוריה' או 'מדע'");
+  }
+  if (format === "escape" && topic === "food") {
+    suggestions.push("חדר בריחה עם נושא אוכל מפתיע! הוסף חידות יצירתיות");
+  }
+
+  if (simData) {
+    const { dominance, balanced, avgTurns, wins, playerCount } = simData;
+    if (!balanced) {
+      const bestPlayer = wins.indexOf(Math.max(...wins));
+      issues.push({ type: "error", text: `איזון: שחקן ${bestPlayer + 1} מנצח ${dominance}% מהמשחקים — קשה מדי לשאר` });
+      score -= 18;
+      suggestions.push(`הוסף מנגנון נגד שחקן מוביל (קלף עונש, קיצור מסלול לאחרים)`);
+    }
+    if (avgTurns < 5) {
+      issues.push({ type: "warn", text: `המשחק קצר מדי — ממוצע ${avgTurns} תורות בלבד` });
+      score -= 10;
+      suggestions.push("הוסף אירועי ביניים שמאריכים את המשחק");
+    }
+    if (avgTurns > 60) {
+      issues.push({ type: "warn", text: `המשחק ארוך מדי — ממוצע ${avgTurns} תורות` });
+      score -= 8;
+      suggestions.push("שקול להוסיף קיצורי מסלול או תנאי ניצחון מהיר");
+    }
+    if (balanced && avgTurns >= 5 && avgTurns <= 60) {
+      suggestions.push("✅ האיזון טוב! המשחק מאוזן היטב בין שחקנים");
+    }
+  } else {
+    suggestions.push("הרץ סימולציה לניתוח איזון מדויק");
+    score -= 5;
+  }
+
+  suggestions.push("הוסף הסבר חוקים ברור בתחילת המשחק");
+  if (format === "board") suggestions.push("שקול להוסיף קלפי הפתעה שמשנים את הדינמיקה");
+
+  return { issues, suggestions, score: Math.max(0, score) };
+}
+
+// ── ScoreRing ─────────────────────────────────────────────────────────────────
+function ScoreRing({ score }) {
+  const color = score >= 80 ? "#34d399" : score >= 60 ? "#f59e0b" : "#ef4444";
+  const r = 34, circ = 2 * Math.PI * r;
+  const dash = (score / 100) * circ;
+  return (
+    <div style={{ position: "relative", width: 90, height: 90, flexShrink: 0 }}>
+      <svg width={90} height={90} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={45} cy={45} r={r} fill="none" stroke={C.border} strokeWidth={7} />
+        <circle cx={45} cy={45} r={r} fill="none" stroke={color} strokeWidth={7}
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{ transition: "stroke-dasharray 1s ease" }} />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 20, fontWeight: 900, color }}>{score}</span>
+        <span style={{ fontSize: 9, color: C.text3 }}>ציון</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Colab chat bot responses ───────────────────────────────────────────────────
+const BOT_REPLIES = {
+  format: {
+    board:   "לוח משחק — מעולה! שקול להוסיף משבצות אירוע ייחודיות 🎲",
+    trivia:  "טריוויה — כיף! בטוח שהשאלות מאוזנות בקושי? 📚",
+    memory:  "זיכרון — אינטואיטיבי ופשוט, מצוין! 🧠",
+    party:   "מסיבה — נהדר לקבוצות! הוסף אתגרים יצירתיים 🎉",
+    escape:  "חדר בריחה — מרגש! ודא שהחידות מחוברות לסיפור 🔐",
+    digital: "וידאו גיים — שאפו! בקרוב נוכל לבנות אותו 🎮",
+  },
+  topic: {
+    fantasy: "פנטזיה — נושא קלאסי! הדרקונים מחכים 🧙",
+    space:   "חלל — אחלה! אל תשכח את הכוכבים הנופלים 🚀",
+    sports:  "ספורט — דינמי ותחרותי! ⚽",
+    animals: "בעלי חיים — חמוד ומושך לכל גיל 🦁",
+    history: "היסטוריה — מעניין ומחנך 🏛️",
+    science: "מדע — שאלות ניסויים ייתנו אווירה מגניבה 🔬",
+    ocean:   "ים — עמוק ומסתורי! 🌊",
+    city:    "עיר — נדל\"ן? מסחר? נושא מושלם ללוח 🏙️",
+    nature:  "טבע — נעים ורגוע 🌿",
+    music:   "מוזיקה — אפשר לשלב צלילים? 🎵",
+    food:    "אוכל — כולם אוהבים! 🍕",
+    movies:  "קולנוע — שאלות טריוויה על סרטים 🎬",
+  },
+};
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function GameCreatorApp({ onBack, onStartGame }) {
   const [gamesList, setGamesList] = useState([
@@ -273,14 +463,63 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [gameFormat,       setGameFormat]       = useState("board");
   const [gameTopic,        setGameTopic]        = useState("fantasy");
+  const [boardDesign,      setBoardDesign]      = useState("pastel");
   const [aiPrompt,         setAiPrompt]         = useState("");
   const [gameTitle,        setGameTitle]        = useState("");
   const [themeColor,       setThemeColor]       = useState("#f08080");
   const [playerName,       setPlayerName]       = useState("שחקן 1");
   const [logoFile,         setLogoFile]         = useState(null);
 
+  // AI tab state
+  const [simRunning,  setSimRunning]  = useState(false);
+  const [simDone,     setSimDone]     = useState(false);
+  const [simData,     setSimData]     = useState(null);
+  const [simProgress, setSimProgress] = useState(0);
+
+  // Colab tab state
+  const [roomCode] = useState(() => Math.random().toString(36).slice(2, 8).toUpperCase());
+  const [colabMsgs, setColabMsgs] = useState([
+    { from: "bot", name: "🤖 GameBot", text: "שלום! אני עוזר ה-AI. שנה פורמט או נושא — אתן פידבק מיידי.", ts: Date.now() - 90000 },
+    { from: "user2", name: "👤 דנה", text: "חיכיתי לזה! נשתף עיצוב?", ts: Date.now() - 45000 },
+  ]);
+  const [colabInput, setColabInput]   = useState("");
+  const [members] = useState([
+    { name: "אתה", role: "יוצר ראשי", color: "#f08080", online: true },
+    { name: "דנה", role: "עוזר",       color: "#34d399", online: true },
+    { name: "יוסי", role: "צופה",      color: "#60a5fa", online: false },
+  ]);
+  const chatEndRef = useRef(null);
+
+  // Scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [colabMsgs]);
+
+  // Bot reacts to format/topic changes
+  const prevFormatRef = useRef(gameFormat);
+  const prevTopicRef  = useRef(gameTopic);
+  useEffect(() => {
+    if (tab !== "colab") return;
+    if (prevFormatRef.current !== gameFormat) {
+      const reply = BOT_REPLIES.format[gameFormat] || "שינוי מעניין!";
+      setTimeout(() => {
+        setColabMsgs(prev => [...prev, { from: "bot", name: "🤖 GameBot", text: reply, ts: Date.now() }]);
+      }, 800);
+    }
+    prevFormatRef.current = gameFormat;
+  }, [gameFormat, tab]);
+  useEffect(() => {
+    if (tab !== "colab") return;
+    if (prevTopicRef.current !== gameTopic) {
+      const reply = BOT_REPLIES.topic[gameTopic] || "נושא מעניין!";
+      setTimeout(() => {
+        setColabMsgs(prev => [...prev, { from: "bot", name: "🤖 GameBot", text: reply, ts: Date.now() }]);
+      }, 800);
+    }
+    prevTopicRef.current = gameTopic;
+  }, [gameTopic, tab]);
+
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000); }
-  function findTpl(id) { return GAME_TEMPLATES.find(t => t.id === id) || GAME_TEMPLATES[0]; }
 
   function handleLogoUpload(e) {
     const file = e.target.files?.[0];
@@ -346,13 +585,62 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
     return FORMAT_TO_SARTORT[fmt] || "medieval";
   }
 
-  const visibleTemplates = categoryFilter === "all"
-    ? GAME_TEMPLATES
-    : GAME_TEMPLATES.filter(t => t.category === categoryFilter);
+  function startSimulation() {
+    setSimRunning(true);
+    setSimDone(false);
+    setSimData(null);
+    setSimProgress(0);
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 18) + 5;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        const result = runSimulation(gameFormat, gameTopic, 3);
+        setSimData(result);
+        setSimRunning(false);
+        setSimDone(true);
+      }
+      setSimProgress(Math.min(progress, 100));
+    }, 120);
+  }
+
+  function sendColabMsg(e) {
+    e.preventDefault();
+    if (!colabInput.trim()) return;
+    const msg = { from: "me", name: "אתה", text: colabInput, ts: Date.now() };
+    setColabMsgs(prev => [...prev, msg]);
+    setColabInput("");
+    // Bot auto-replies occasionally
+    if (Math.random() < 0.6) {
+      const replies = [
+        "רעיון מעולה! 🎯",
+        "מסכים — בואו נמשיך לבנות",
+        "אולי נוסיף עוד אירועים?",
+        "נשמע מגניב! האיזון נראה טוב",
+        "AI מנתח: הכיוון הזה מבטיח 📊",
+      ];
+      setTimeout(() => {
+        setColabMsgs(prev => [...prev, { from: "bot", name: "🤖 GameBot", text: replies[Math.floor(Math.random() * replies.length)], ts: Date.now() }]);
+      }, 1200);
+    }
+  }
+
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  }
+
+  const analysis = analyzeGame(gameFormat, gameTopic, gameTitle, boardDesign, simDone ? simData : null);
+  const visibleTemplates = categoryFilter === "all" ? GAME_TEMPLATES : GAME_TEMPLATES.filter(t => t.category === categoryFilter);
 
   return (
     <div style={st.page}>
-      <style>{`@keyframes pop { 0%{transform:translateX(-50%) scale(.85);opacity:0} 100%{transform:translateX(-50%) scale(1);opacity:1} }`}</style>
+      <style>{`
+        @keyframes pop { 0%{transform:translateX(-50%) scale(.85);opacity:0} 100%{transform:translateX(-50%) scale(1);opacity:1} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+      `}</style>
       <Toast msg={toast} />
 
       <header style={st.header}>
@@ -366,11 +654,13 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
             <div style={{ fontSize: 11, color: C.text3 }}>מחולל כל סוגי המשחקים — Sartort</div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <TabBtn active={tab === "home"}      onClick={() => setTab("home")}>🏠 דף הבית</TabBtn>
-          <TabBtn active={tab === "create"}    onClick={() => { setTab("create"); if (!selectedTemplate) { setGameFormat("board"); setGameTopic("fantasy"); } }}>🎨 סטודיו עיצוב</TabBtn>
+          <TabBtn active={tab === "create"}    onClick={() => { setTab("create"); if (!selectedTemplate) { setGameFormat("board"); setGameTopic("fantasy"); } }}>🎨 סטודיו</TabBtn>
+          <TabBtn active={tab === "ai"}        onClick={() => setTab("ai")}>🤖 AI מנתח</TabBtn>
+          <TabBtn active={tab === "colab"}     onClick={() => setTab("colab")}>👥 בנייה משותפת</TabBtn>
           <TabBtn active={tab === "community"} onClick={() => setTab("community")}>🌍 קהילה</TabBtn>
-          <button onClick={onBack} style={{ ...st.btnGhost, marginRight: 10, padding: "7px 14px", fontSize: 12 }}>← חזור ל-Sartort</button>
+          <button onClick={onBack} style={{ ...st.btnGhost, marginRight: 8, padding: "7px 14px", fontSize: 12 }}>← חזור</button>
         </div>
       </header>
 
@@ -426,7 +716,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
           </div>
         )}
 
-        {/* ── Create tab ── */}
+        {/* ── Create / Studio tab ── */}
         {tab === "create" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20, alignItems: "start" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -456,7 +746,7 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
               <div style={st.card}>
                 <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 4 }}>נושא המשחק</div>
                 <div style={{ fontSize: 12, color: C.text3, marginBottom: 14 }}>על מה המשחק — ישפיע על האיקונים, הצבעים והתוכן</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {TOPIC_PRESETS.map(t => (
                     <button key={t.id} onClick={() => setGameTopic(t.id)}
                       style={{
@@ -469,7 +759,32 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
                 </div>
               </div>
 
-              {/* Section 3: details */}
+              {/* Section 3: board design */}
+              <div style={st.card}>
+                <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 4 }}>עיצוב לוח / ערכת נושא</div>
+                <div style={{ fontSize: 12, color: C.text3, marginBottom: 14 }}>בחר אווירה ויזואלית — ישפיע על צבעים ומראה המשחק</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+                  {BOARD_DESIGNS.map(d => (
+                    <button key={d.id} onClick={() => setBoardDesign(d.id)}
+                      style={{
+                        border: `2px solid ${boardDesign === d.id ? d.accent : C.border}`,
+                        borderRadius: 12, padding: "14px 8px", cursor: "pointer", textAlign: "center",
+                        background: d.bg, transition: "all .2s",
+                        boxShadow: boardDesign === d.id ? `0 0 0 3px ${d.accent}44` : "none",
+                      }}>
+                      <div style={{ fontSize: 24, marginBottom: 5 }}>{d.icon}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: d.accent }}>{d.label}</div>
+                      <div style={{ marginTop: 6, display: "flex", gap: 3, justifyContent: "center" }}>
+                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: d.bg, border: `1.5px solid ${d.accent}` }} />
+                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: d.accent }} />
+                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: d.cell, border: `1.5px solid ${d.accent}` }} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section 4: details */}
               <div style={st.card}>
                 <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 16 }}>פרטי המשחק</div>
                 <div style={{ marginBottom: 16 }}>
@@ -506,7 +821,222 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
             </div>
 
             {/* Live preview */}
-            <LivePreview format={gameFormat} topic={gameTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} />
+            <LivePreview format={gameFormat} topic={gameTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+          </div>
+        )}
+
+        {/* ── AI Analysis tab ── */}
+        {tab === "ai" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, alignItems: "start" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+              {/* Score header */}
+              <div style={{ ...st.card, display: "flex", alignItems: "center", gap: 20 }}>
+                <ScoreRing score={analysis.score} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: C.text1, marginBottom: 4 }}>ניתוח AI — {gameTitle || "ללא שם"}</div>
+                  <div style={{ fontSize: 12, color: C.text3, marginBottom: 8 }}>
+                    {GAME_FORMATS.find(f => f.id === gameFormat)?.icon} {GAME_FORMATS.find(f => f.id === gameFormat)?.label} •{" "}
+                    {TOPIC_PRESETS.find(t => t.id === gameTopic)?.icon} {TOPIC_PRESETS.find(t => t.id === gameTopic)?.label} •{" "}
+                    {BOARD_DESIGNS.find(d => d.id === boardDesign)?.icon} {BOARD_DESIGNS.find(d => d.id === boardDesign)?.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: analysis.score >= 80 ? "#34d399" : analysis.score >= 60 ? "#f59e0b" : "#ef4444", fontWeight: 700 }}>
+                    {analysis.score >= 80 ? "✅ מצוין! המשחק נראה מאוזן ומוכן" : analysis.score >= 60 ? "⚠️ טוב — עם כמה שיפורים יהיה מעולה" : "❌ דרוש שיפור — קרא את הבעיות"}
+                  </div>
+                </div>
+                <button onClick={() => setTab("create")} style={{ ...st.btnGhost, fontSize: 12 }}>✏️ ערוך משחק</button>
+              </div>
+
+              {/* Issues */}
+              {analysis.issues.length > 0 && (
+                <div style={st.card}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 14 }}>🔍 בעיות שזוהו</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {analysis.issues.map((issue, i) => {
+                      const colors = { error: { bg: "#fef2f2", border: "#fca5a5", text: "#991b1b", icon: "❌" }, warn: { bg: "#fffbeb", border: "#fcd34d", text: "#92400e", icon: "⚠️" }, info: { bg: "#eff6ff", border: "#93c5fd", text: "#1e40af", icon: "ℹ️" } };
+                      const s = colors[issue.type] || colors.info;
+                      return (
+                        <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 10, padding: "10px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                          <span style={{ fontSize: 14 }}>{s.icon}</span>
+                          <span style={{ fontSize: 13, color: s.text, lineHeight: 1.5 }}>{issue.text}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Suggestions */}
+              <div style={st.card}>
+                <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 14 }}>💡 הצעות לשיפור</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {analysis.suggestions.map((s, i) => (
+                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "8px 12px", background: C.bg0, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                      <span style={{ fontSize: 12, color: "#f08080", fontWeight: 700, flexShrink: 0 }}>→</span>
+                      <span style={{ fontSize: 12, color: C.text2, lineHeight: 1.5 }}>{s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Simulation */}
+              <div style={st.card}>
+                <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 4 }}>🎮 סימולציה — 100 משחקים אוטומטיים</div>
+                <div style={{ fontSize: 12, color: C.text3, marginBottom: 16 }}>שחקנים רובוטיים מנגנים את המשחק שלך 100 פעמים ובודקים איזון</div>
+
+                {!simRunning && !simDone && (
+                  <button onClick={startSimulation} style={{ ...st.btnIndigo, width: "100%", justifyContent: "center", padding: "13px 0", fontSize: 14 }}>
+                    ▶ הרץ סימולציה
+                  </button>
+                )}
+
+                {simRunning && (
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, color: C.text2, animation: "pulse 1s infinite" }}>⚙️ מריץ {simProgress} / 100 משחקים...</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: C.indigo }}>{simProgress}%</span>
+                    </div>
+                    <div style={{ background: C.bg0, borderRadius: 8, height: 10, overflow: "hidden", border: `1px solid ${C.border}` }}>
+                      <div style={{ height: "100%", background: `linear-gradient(90deg, #f08080, #FFB3C6)`, width: `${simProgress}%`, borderRadius: 8, transition: "width .1s" }} />
+                    </div>
+                  </div>
+                )}
+
+                {simDone && simData && (
+                  <div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+                      {[
+                        { label: "ממוצע תורות", value: simData.avgTurns, unit: "תורות" },
+                        { label: "ניצחון מקסימלי", value: `${simData.dominance}%`, unit: `שחקן ${simData.wins.indexOf(Math.max(...simData.wins)) + 1}` },
+                        { label: "איזון", value: simData.balanced ? "✅" : "⚠️", unit: simData.balanced ? "מאוזן" : "לא מאוזן" },
+                      ].map((stat, i) => (
+                        <div key={i} style={{ background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px", textAlign: "center" }}>
+                          <div style={{ fontSize: 20, fontWeight: 900, color: C.indigo, marginBottom: 2 }}>{stat.value}</div>
+                          <div style={{ fontSize: 10, color: C.text3, fontWeight: 700 }}>{stat.label}</div>
+                          <div style={{ fontSize: 10, color: C.text2 }}>{stat.unit}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: C.text2, marginBottom: 8 }}>ניצחונות לפי שחקן (100 משחקים)</div>
+                      {simData.wins.map((w, i) => (
+                        <div key={i} style={{ marginBottom: 6 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.text2, marginBottom: 3 }}>
+                            <span>שחקן {i + 1}</span><span>{w} ניצחונות ({w}%)</span>
+                          </div>
+                          <div style={{ background: C.bg0, borderRadius: 4, height: 8, overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${w}%`, background: i === simData.wins.indexOf(Math.max(...simData.wins)) ? "#f08080" : "#60a5fa", borderRadius: 4, transition: "width .5s" }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={startSimulation} style={{ ...st.btnGhost, width: "100%", textAlign: "center", justifyContent: "center", fontSize: 12 }}>↺ הרץ שוב</button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: live preview */}
+            <LivePreview format={gameFormat} topic={gameTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+          </div>
+        )}
+
+        {/* ── Colab tab ── */}
+        {tab === "colab" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 20, alignItems: "start" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+              {/* Room header */}
+              <div style={{ ...st.card, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 2 }}>👥 חדר יצירה משותפת</div>
+                  <div style={{ fontSize: 11, color: C.text3 }}>שתף את קוד החדר עם חברים — כולם עורכים בזמן אמת</div>
+                </div>
+                <div style={{ textAlign: "center", flexShrink: 0 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "monospace", color: "#f08080", letterSpacing: 3, background: C.bg0, border: `2px dashed ${C.border}`, borderRadius: 10, padding: "6px 16px" }}>{roomCode}</div>
+                  <div style={{ fontSize: 10, color: C.text3, marginTop: 4 }}>קוד חדר</div>
+                </div>
+              </div>
+
+              {/* Chat */}
+              <div style={{ ...st.card, padding: 0, overflow: "hidden" }}>
+                <div style={{ padding: "14px 18px", borderBottom: `1px solid ${C.border}`, fontWeight: 700, fontSize: 13, color: C.text1 }}>
+                  💬 צ'אט — {colabMsgs.length} הודעות
+                </div>
+                <div style={{ height: 320, overflowY: "auto", padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+                  {colabMsgs.map((msg, i) => {
+                    const isMe = msg.from === "me";
+                    const isBot = msg.from === "bot";
+                    return (
+                      <div key={i} style={{ display: "flex", flexDirection: isMe ? "row-reverse" : "row", alignItems: "flex-end", gap: 8 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: isBot ? "#f0808022" : isMe ? "#f08080" : "#60a5fa22", border: `1px solid ${isBot ? "#f0808044" : isMe ? "#f08080" : "#60a5fa44"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>
+                          {isBot ? "🤖" : isMe ? "👤" : "👤"}
+                        </div>
+                        <div style={{ maxWidth: "70%" }}>
+                          <div style={{ fontSize: 9, color: C.text3, marginBottom: 3, textAlign: isMe ? "left" : "right" }}>
+                            {msg.name} • {fmtTime(msg.ts)}
+                          </div>
+                          <div style={{ background: isMe ? "#f08080" : isBot ? C.bg0 : "#eff6ff", color: isMe ? "#fff" : C.text1, borderRadius: isMe ? "14px 14px 4px 14px" : "14px 14px 14px 4px", padding: "8px 13px", fontSize: 13, lineHeight: 1.5, border: isMe ? "none" : `1px solid ${C.border}` }}>
+                            {msg.text}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={chatEndRef} />
+                </div>
+                <form onSubmit={sendColabMsg} style={{ display: "flex", gap: 10, padding: "12px 18px", borderTop: `1px solid ${C.border}`, background: C.bg0 }}>
+                  <input value={colabInput} onChange={e => setColabInput(e.target.value)}
+                    placeholder="שלח הודעה לצוות..."
+                    style={{ ...st.input, flex: 1, fontSize: 13 }} />
+                  <button type="submit" style={{ ...st.btnIndigo, padding: "9px 16px", fontSize: 13 }}>שלח</button>
+                </form>
+              </div>
+
+              {/* Shared game state */}
+              <div style={st.card}>
+                <div style={{ fontSize: 14, fontWeight: 900, color: C.text1, marginBottom: 14 }}>🔄 מצב המשחק המשותף (עדכון חי)</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                  {[
+                    { label: "צורת משחק", value: `${GAME_FORMATS.find(f => f.id === gameFormat)?.icon} ${GAME_FORMATS.find(f => f.id === gameFormat)?.label}` },
+                    { label: "נושא", value: `${TOPIC_PRESETS.find(t => t.id === gameTopic)?.icon} ${TOPIC_PRESETS.find(t => t.id === gameTopic)?.label}` },
+                    { label: "עיצוב", value: `${BOARD_DESIGNS.find(d => d.id === boardDesign)?.icon} ${BOARD_DESIGNS.find(d => d.id === boardDesign)?.label}` },
+                  ].map((item, i) => (
+                    <div key={i} style={{ background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+                      <div style={{ fontSize: 14, marginBottom: 4 }}>{item.value}</div>
+                      <div style={{ fontSize: 10, color: C.text3 }}>{item.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setTab("create")} style={{ ...st.btnIndigo, marginTop: 12, width: "100%", justifyContent: "center" }}>✏️ ערוך עכשיו בסטודיו</button>
+              </div>
+            </div>
+
+            {/* Members sidebar */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={st.card}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: C.text1, marginBottom: 14 }}>חברי הצוות</div>
+                {members.map((m, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: m.color + "22", border: `2px solid ${m.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, position: "relative", flexShrink: 0 }}>
+                      👤
+                      <div style={{ position: "absolute", bottom: 0, right: 0, width: 10, height: 10, borderRadius: "50%", background: m.online ? "#34d399" : "#9ca3af", border: "1.5px solid #fff" }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.text1 }}>{m.name}</div>
+                      <div style={{ fontSize: 10, color: m.color, fontWeight: 600 }}>{m.role}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ marginTop: 4, padding: "8px 12px", background: C.bg0, borderRadius: 8, border: `1px dashed ${C.border}`, textAlign: "center", fontSize: 12, color: C.text3, cursor: "pointer" }}
+                  onClick={() => { navigator.clipboard?.writeText(roomCode); showToast(`קוד החדר ${roomCode} הועתק!`); }}>
+                  ➕ שתף קוד: {roomCode}
+                </div>
+              </div>
+
+              <LivePreview format={gameFormat} topic={gameTopic} gameTitle={gameTitle} themeColor={themeColor} playerName={playerName} logoFile={logoFile} boardDesign={boardDesign} />
+            </div>
           </div>
         )}
 
