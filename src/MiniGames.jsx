@@ -347,27 +347,107 @@ const MEMORY_EMOJIS = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 // ── Keyword → preset mapping for custom/invented topics ───────────────────────
-const TOPIC_KEYWORDS = {
-  fantasy:  ["פנטז","קסם","דרקון","אביר","טירה","מכשפ","גמד","אלף","חרב","שרביט","מלוכ","ממלכ","קוסם","יצור","מפלצ","ענק","פיה","גיבור","לוחם","חיה מיתול"],
-  space:    ["חלל","כוכב","גלקסי","גלאקט","חייזר","רקטה","אסטרונ","ירח","שמש","מאדים","לוויין","מסלול","אסטר","קוסמ","פלנט","לוויתן חלל","ufo","נאס"],
-  sports:   ["ספורט","כדורגל","כדורסל","ריצ","שחיי","אולימפ","אצלת","ספורטאי","כדור","אלופ","מירוץ","שחיה","גולף","טניס","היאבקות"],
-  animals:  ["חיה","חיות","בעל חיים","בעלי","כלב","חתול","אריה","פיל","ג'ירפ","עוף","ציפור","דג","זוחל","חרק","יונק","דוב","זאב","נמר","קוף","קוביה"],
-  history:  ["היסטור","עתיק","מלחמ","ביניים","פרעה","רומ","יוון","קיסר","מהפכ","פרעו","ממלכ","עמ","תרבות","ארכיאולוג","עת העתיק"],
-  science:  ["מדע","פיזיק","כימי","ניסוי","מעבד","מדענ","טכנולוג","רובוט","בינה מלאכותית","ai","מחשב","ביולוג","גנטי","חלקיק"],
-  ocean:    ["ים","אוקיינ","פיראט","שונית","דולפין","כריש","תמנ","אלמוג","גל","מים","צלילה","ספינה","צוללת","חוף","דיג"],
-  city:     ["עיר","עיירה","מטרופולין","בניין","רחוב","שכונ","מונופול","נדלן","נכס","מסחר","פארק","גן","ארכיטקטור","תשתית"],
-  nature:   ["טבע","יער","עץ","עצ","צמח","הר","מדבר","גשם","שלג","מזג","ג'ונגל","ביצה","מרעה","כפר","ירוק","אקולוג"],
-  music:    ["מוזיק","שיר","להקה","זמר","גיטר","פסנתר","ריתמ","ביט","מנגינ","תזמורת","מקצב","סולן","אלבום","קונצרט"],
-  food:     ["אוכל","מזון","בישול","מטבח","שף","מסעדה","ארוחה","גבינה","לחם","עוגה","ירק","פרי","בשר","מתכון","תבשיל"],
-  movies:   ["סרט","קולנוע","שחקן","שחקנ","במאי","הוליווד","פרס","אוסקר","סדרה","טלוויז","קריקטור","אנימ","עלילה","דרמה"],
+
+// Level 1: exact whole-word matches (highest priority)
+const WORD_MAP = {
+  // fantasy
+  פנטזיה:"fantasy",פנטסיה:"fantasy",קסם:"fantasy",דרקון:"fantasy",דרקונים:"fantasy",
+  אביר:"fantasy",אבירים:"fantasy",טירה:"fantasy",טירות:"fantasy",גמד:"fantasy",
+  גמדים:"fantasy",אלף:"fantasy",אלפים:"fantasy",חרב:"fantasy",חרבות:"fantasy",
+  מכשפה:"fantasy",מכשפות:"fantasy",שרביט:"fantasy",קוסם:"fantasy",קוסמים:"fantasy",
+  פיה:"fantasy",פיות:"fantasy",מפלצת:"fantasy",מפלצות:"fantasy",
+  // space
+  חלל:"space",כוכב:"space",כוכבים:"space",גלקסיה:"space",גלקסיות:"space",
+  חייזר:"space",חייזרים:"space",רקטה:"space",רקטות:"space",אסטרונאוט:"space",
+  ירח:"space",שמש:"space",מאדים:"space",כוכבלכת:"space",אסטרואיד:"space",
+  טיל:"space",טילים:"space",לוויין:"space",מצולת:"space",נאסא:"space",
+  // sports
+  ספורט:"sports",כדורגל:"sports",כדורסל:"sports",טניס:"sports",גולף:"sports",
+  שחייה:"sports",ריצה:"sports",אולימפיאדה:"sports",אתלטיקה:"sports",קרב:"sports",
+  אלופות:"sports",ליגה:"sports",שחיינים:"sports",כדורעף:"sports",שחי:"sports",
+  // animals
+  חיה:"animals",חיות:"animals",כלב:"animals",כלבים:"animals",חתול:"animals",
+  חתולים:"animals",אריה:"animals",אריות:"animals",פיל:"animals",פילים:"animals",
+  "ג׳ירפה":"animals","ג'ירפה":"animals",עוף:"animals",עופות:"animals",ציפור:"animals",
+  ציפורים:"animals",דג:"animals",דגים:"animals",זוחל:"animals",חרק:"animals",
+  יונק:"animals",יונקים:"animals",דוב:"animals",דובים:"animals",זאב:"animals",
+  זאבים:"animals",נמר:"animals",נמרים:"animals",קוף:"animals",קופים:"animals",
+  תנין:"animals",תנינים:"animals",נחש:"animals",נחשים:"animals",ארנב:"animals",
+  // history
+  היסטוריה:"history",עתיקות:"history",פרעה:"history",פרעונים:"history",
+  רומא:"history",יוון:"history",ביניים:"history",קיסר:"history",מהפכה:"history",
+  מלחמה:"history",מצרים:"history",בבל:"history",פרס:"history",ויקינגים:"history",
+  // science
+  מדע:"science",פיזיקה:"science",כימיה:"science",ביולוגיה:"science",
+  ניסוי:"science",מחשב:"science",מחשבים:"science",רובוט:"science",רובוטים:"science",
+  גנטיקה:"science",מעבדה:"science",טכנולוגיה:"science",אנרגיה:"science",
+  // ocean
+  אוקיינוס:"ocean",פיראט:"ocean",פיראטים:"ocean",שונית:"ocean",דולפין:"ocean",
+  דולפינים:"ocean",כריש:"ocean",כרישים:"ocean",תמנון:"ocean",תמנונים:"ocean",
+  אלמוג:"ocean",אלמוגים:"ocean",ספינה:"ocean",ספינות:"ocean",צוללת:"ocean",
+  גלים:"ocean",צלילה:"ocean",דיג:"ocean",מיצר:"ocean",
+  // city
+  עיר:"city",ערים:"city",מטרופולין:"city",בניין:"city",בניינים:"city",
+  שכונה:"city",שכונות:"city",רחוב:"city",רחובות:"city",נדלן:"city",
+  נכס:"city",נכסים:"city",מונופול:"city",תחבורה:"city",אדריכלות:"city",
+  // nature
+  טבע:"nature",יער:"nature",יערות:"nature",צמח:"nature",צמחים:"nature",
+  הר:"nature",הרים:"nature",מדבר:"nature",מדבריות:"nature","ג׳ונגל":"nature",
+  "ג'ונגל":"nature",גשם:"nature",שלג:"nature",נהר:"nature",נהרות:"nature",
+  // music
+  מוזיקה:"music",שיר:"music",שירים:"music",להקה:"music",להקות:"music",
+  זמר:"music",זמרים:"music",גיטרה:"music",פסנתר:"music",תזמורת:"music",
+  קונצרט:"music",אלבום:"music",ביט:"music",מנגינה:"music",מקצב:"music",
+  // food
+  אוכל:"food",מזון:"food",בישול:"food",מטבח:"food",שף:"food",
+  מסעדה:"food",מסעדות:"food",ארוחה:"food",גבינה:"food",לחם:"food",
+  עוגה:"food",עוגות:"food",ירקות:"food",פירות:"food",בשר:"food",
+  מתכון:"food",תבשיל:"food",פיצה:"food",סושי:"food",המבורגר:"food",
+  // movies
+  סרט:"movies",סרטים:"movies",קולנוע:"movies",שחקן:"movies",שחקנית:"movies",
+  במאי:"movies",הוליווד:"movies",אוסקר:"movies",סדרה:"movies",סדרות:"movies",
+  טלוויזיה:"movies",אנימציה:"movies",קומיקס:"movies",גיבור:"movies",
+};
+
+// Level 2: substring keywords (min 4 chars, carefully chosen to avoid false matches)
+const SUBSTR_KEYWORDS = {
+  fantasy:  ["פנטז","דרקו","מכשפ","ממלכ","לוחמ","מפלצ","אלפים","גמדי","טירת","קסום"],
+  space:    ["גלאקט","אסטרונ","חייזר","רקטה","לוויין","מסלול","קוסמו","ufo","נאס"],
+  sports:   ["ספורט","כדורג","כדורס","אולימפ","אתלטי","שחייה","ריצה"],
+  animals:  ["בעלי חיים","בעל חיים","זוחל","יונקי","חרקי","עופות"],
+  history:  ["היסטור","עתיקו","ארכיאו","ממלכות","מלחמות","תרבות"],
+  science:  ["טכנולוג","ביולוג","גנטיק","מעבדה","חלקיק","מחשוב"],
+  ocean:    ["אוקיינ","פיראט","שונית","אלמוג","צלילה","ספינות","דולפי","כרישי"],
+  city:     ["מטרופ","אדריכ","תשתית","מונופ","נדלן"],
+  nature:   ["ג'ונגל","ג׳ונגל","מדבר","אקולוג","נוף טב","יערות"],
+  music:    ["מוזיק","תזמור","קונצ","מנגינ","מקצב"],
+  food:     ["בישול","מסעדה","תבשיל","מתכון","ארוחה"],
+  movies:   ["קולנוע","הוליו","אוסקר","סדרת","אנימצ"],
 };
 
 function mapCustomTopicToPreset(customTopicText) {
   if (!customTopicText) return "default";
-  const text = customTopicText.toLowerCase();
+  const text = customTopicText.trim();
+
+  // Level 1: split into words, check exact word map
+  const words = text.split(/[\s\-,،،]+/).map(w => w.toLowerCase().replace(/['"״׳]/g, ""));
+  for (const word of words) {
+    if (WORD_MAP[word]) return WORD_MAP[word];
+    // strip common Hebrew prefixes (ב,ל,מ,ה,ו,ש,כ) and check again
+    const stripped = word.replace(/^(ב|ל|מ|ה|ו|ש|כ|של|את|על|עם|אל|לא)/, "");
+    if (stripped && WORD_MAP[stripped]) return WORD_MAP[stripped];
+  }
+
+  // Level 2: check phrase map (full text, phrases ≥ 3 chars)
+  const textLow = text.toLowerCase();
+  for (const [word, preset] of Object.entries(WORD_MAP)) {
+    if (word.length >= 3 && textLow.includes(word)) return preset;
+  }
+
+  // Level 3: substring keywords (longer patterns, less false-positive)
   let best = "default", bestScore = 0;
-  for (const [preset, kws] of Object.entries(TOPIC_KEYWORDS)) {
-    const score = kws.filter(kw => text.includes(kw)).length;
+  for (const [preset, kws] of Object.entries(SUBSTR_KEYWORDS)) {
+    const score = kws.filter(kw => textLow.includes(kw)).length;
     if (score > bestScore) { bestScore = score; best = preset; }
   }
   return best;
