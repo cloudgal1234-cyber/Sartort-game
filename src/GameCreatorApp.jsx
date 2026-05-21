@@ -1208,10 +1208,14 @@ export default function GameCreatorApp({ onBack, onStartGame }) {
                 <GameCard key={g.id} game={g}
                   onPlay={(game) => {
                     if (onStartGame) {
+                      const PRESET_IDS = ["fantasy","space","sports","animals","history","science","ocean","city","nature","music","food","movies"];
+                      const rawTopic = game.topic || "fantasy";
+                      const isPreset = PRESET_IDS.includes(rawTopic);
                       onStartGame({
                         themeId: resolveThemeId(game),
                         format: game.format || "board",
-                        topic: game.topic || "fantasy",
+                        topic: isPreset ? rawTopic : "fantasy",
+                        customTopic: isPreset ? null : rawTopic,
                         name: game.title,
                       });
                     }
